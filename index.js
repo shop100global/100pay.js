@@ -23,6 +23,12 @@ class _100Pay{
                     response_data.message = "Something went wrong, be sure you supplied a valid payment id."
                     reject(response_data)
                 } else {
+                    if(response.body === '') {
+                      response_data.status = 'error'
+                      response_data.data = {}
+                      response_data.message = "Something went wrong, be sure you supplied a valid payment id."
+                      return resolve(response_data)
+                    }
                     if(response.body === 'Access Denied, Invalid KEY supplied'){
                       response_data.status = 'error'
                       response_data.data = {}
