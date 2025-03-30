@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<coverage generated="1743361419028" clover="3.2.0">
+  <project timestamp="1743361419028" name="All files">
+    <metrics statements="26" coveredstatements="24" conditionals="13" coveredconditionals="8" methods="3" coveredmethods="3" elements="42" coveredelements="35" complexity="0" loc="26" ncloc="26" packages="1" files="1" classes="1"/>
+    <file name="index.ts" path="/Users/miracleio/Documents/otherprojs/shop100/100pay.js/src/index.ts">
+      <metrics statements="26" coveredstatements="24" conditionals="13" coveredconditionals="8" methods="3" coveredmethods="3"/>
+      <line num="1" count="1" type="stmt"/>
+      <line num="30" count="1" type="stmt"/>
+      <line num="35" count="2" type="stmt"/>
+      <line num="36" count="2" type="stmt"/>
+      <line num="37" count="2" type="stmt"/>
+      <line num="38" count="2" type="stmt"/>
+      <line num="42" count="1" type="stmt"/>
+      <line num="47" count="5" type="stmt"/>
+      <line num="48" count="5" type="stmt"/>
+      <line num="51" count="5" type="stmt"/>
+      <line num="52" count="5" type="stmt"/>
+      <line num="53" count="5" type="stmt"/>
+      <line num="62" count="4" type="cond" truecount="1" falsecount="0"/>
+      <line num="63" count="1" type="stmt"/>
+      <line num="72" count="3" type="cond" truecount="1" falsecount="0"/>
+      <line num="73" count="2" type="cond" truecount="1" falsecount="0"/>
+      <line num="74" count="1" type="stmt"/>
+      <line num="81" count="1" type="cond" truecount="1" falsecount="0"/>
+      <line num="82" count="1" type="stmt"/>
+      <line num="90" count="1" type="stmt"/>
+      <line num="94" count="1" type="cond" truecount="3" falsecount="1"/>
+      <line num="99" count="1" type="stmt"/>
+      <line num="105" count="1" type="cond" truecount="0" falsecount="1"/>
+      <line num="106" count="0" type="stmt"/>
+      <line num="107" count="0" type="stmt"/>
+      <line num="114" count="1" type="stmt"/>
+    </file>
+  </project>
+</coverage>

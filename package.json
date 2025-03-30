@@ -2,9 +2,24 @@
   "name": "@100pay-hq/100pay.js",
   "version": "1.0.2",
   "description": "100Pay.js is the official Nodejs API wrapper SDK that lets you easily verify crypto payments, run bulk payout, transfer assets and many more.",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
   "scripts": {
-    "test": "test"
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "build": "tsc",
+    "build:clean": "rm -rf dist && tsc",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix",
+    "verify": "npm run lint && npm run test && npm run build",
+    "prepare": "npm run verify"
   },
   "repository": {
     "type": "git",
@@ -24,5 +39,21 @@
   "bugs": {
     "url": "https://github.com/shop100global/100pay.js/issues"
   },
-  "homepage": "https://github.com/shop100global/100pay.js#readme"
+  "homepage": "https://github.com/shop100global/100pay.js#readme",
+  "devDependencies": {
+    "@eslint/js": "^9.23.0",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.13.14",
+    "@typescript-eslint/eslint-plugin": "^8.28.0",
+    "@typescript-eslint/parser": "^8.28.0",
+    "eslint": "^9.23.0",
+    "globals": "^16.0.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.3.0",
+    "typescript": "^5.8.2"
+  },
+  "dependencies": {
+    "axios": "^1.8.4"
+  },
+  "type": "module"
 }
