@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1743363662213" clover="3.2.0">
-  <project timestamp="1743363662213" name="All files">
+<coverage generated="1743363706619" clover="3.2.0">
+  <project timestamp="1743363706619" name="All files">
     <metrics statements="26" coveredstatements="24" conditionals="13" coveredconditionals="8" methods="3" coveredmethods="3" elements="42" coveredelements="35" complexity="0" loc="26" ncloc="26" packages="1" files="1" classes="1"/>
     <file name="index.ts" path="/Users/miracleio/Documents/otherprojs/shop100/100pay.js/src/index.ts">
       <metrics statements="26" coveredstatements="24" conditionals="13" coveredconditionals="8" methods="3" coveredmethods="3"/>

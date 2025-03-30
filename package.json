@@ -4,6 +4,13 @@
   "description": "100Pay.js is the official Nodejs API wrapper SDK that lets you easily verify crypto payments, run bulk payout, transfer assets and many more.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
   "files": [
     "dist",
     "LICENSE",
@@ -54,6 +61,5 @@
   },
   "dependencies": {
     "axios": "^1.8.4"
-  },
-  "type": "module"
+  }
 }
