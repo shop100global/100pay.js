@@ -1,9 +1,11 @@
 import axios, { AxiosError, AxiosResponse } from "axios";
+import * as crypto from "crypto";
 
 // Interface for constructor parameters
 interface IPay100Config {
   publicKey: string;
   secretKey: string;
+  baseUrl?: string;
 }
 
 // Interface for transaction data from API
@@ -26,6 +28,8 @@ interface IVerifyResponse {
   message?: string;
 }
 
+const BASE_URL = process.env.BASE_URL || "https://api.100pay.co";
+
 // Error type for payment verification
 export class PaymentVerificationError extends Error {
   status: string;
@@ -42,20 +46,69 @@ export class PaymentVerificationError extends Error {
 export class Pay100 {
   private publicKey: string;
   private secretKey: string;
+  private baseUrl: string;
 
-  constructor({ publicKey, secretKey }: IPay100Config) {
+  constructor({ publicKey, secretKey, baseUrl = BASE_URL }: IPay100Config) {
     this.publicKey = publicKey;
     this.secretKey = secretKey;
+    this.baseUrl = baseUrl;
   }
 
+  /**
+   * Creates a request signature for secure server-to-server communication
+   * @param payload Request payload to sign
+   * @returns Object containing timestamp and signature
+   */
+  private createSignature(payload: Record<string, unknown>): {
+    timestamp: string;
+    signature: string;
+  } {
+    const timestamp = Date.now().toString();
+
+    // Create signature using HMAC SHA-256
+    const signature = crypto
+      .createHmac("sha256", this.secretKey)
+      .update(timestamp + JSON.stringify(payload))
+      .digest("hex");
+
+    return { timestamp, signature };
+  }
+
+  /**
+   * Create common headers for API requests
+   * @param additionalHeaders Additional headers to include
+   * @param payload Payload to sign (if signature is needed)
+   * @returns Headers object
+   */
+  private getHeaders(
+    payload: Record<string, unknown> = {}
+  ): Record<string, string> {
+    // Generate signature based on payload
+    const { timestamp, signature } = this.createSignature(payload);
+
+    return {
+      "api-key": this.publicKey,
+      "x-secret-key": this.secretKey,
+      "x-timestamp": timestamp,
+      "x-signature": signature,
+      "Content-Type": "application/json",
+    };
+  }
+
+  /**
+   * Verify a transaction
+   * @param transactionId Transaction ID to verify
+   * @returns Promise resolving to verification result
+   */
   verify = async (transactionId: string): Promise<IVerifyResponse> => {
     try {
+      const payload = { transactionId };
+
       const response: AxiosResponse<IRawApiResponse> = await axios({
         method: "POST",
-        url: `https://api.100pay.co/api/v1/pay/crypto/payment/${transactionId}`,
-        headers: {
-          "api-key": this.publicKey,
-        },
+        url: `${this.baseUrl}/api/v1/pay/crypto/payment/${transactionId}`,
+        headers: this.getHeaders(payload),
+        data: payload,
       });
 
       // Handle empty response
@@ -116,4 +169,46 @@ export class Pay100 {
       );
     }
   };
+
+  /**
+   * Generic method to make authenticated API calls
+   * @param method HTTP method
+   * @param endpoint API endpoint
+   * @param data Request payload
+   * @returns Promise resolving to API response
+   */
+  async request<T>(
+    method: "GET" | "POST" | "PUT" | "DELETE",
+    endpoint: string,
+    data: Record<string, unknown> = {}
+  ): Promise<T> {
+    try {
+      const url = `${this.baseUrl}${endpoint}`;
+      const headers = this.getHeaders(data);
+
+      const response = await axios({
+        method,
+        url,
+        headers,
+        data: method !== "GET" ? data : undefined,
+        params: method === "GET" ? data : undefined,
+      });
+
+      return response.data as T;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const axiosError = error as AxiosError;
+        const errorMessage =
+          axiosError.response?.data &&
+          typeof axiosError.response.data === "object" &&
+          "message" in axiosError.response.data
+            ? String(axiosError.response.data.message)
+            : axiosError.message;
+
+        throw new Error(`API Request Failed: ${errorMessage}`);
+      }
+
+      throw error;
+    }
+  }
 }

@@ -2,13 +2,21 @@
   "name": "@100pay-hq/100pay.js",
   "version": "1.1.2",
   "description": "100Pay.js is the official Nodejs API wrapper SDK that lets you easily verify crypto payments, run bulk payout, transfer assets and many more.",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
   "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "require": "./dist/index.cjs",
+      "import": "./dist/index.js"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "*": [
+        "dist/index.d.ts"
+      ]
     }
   },
   "files": [
@@ -17,11 +25,11 @@
     "README.md"
   ],
   "scripts": {
+    "build": "tsup",
+    "build:clean": "rm -rf dist && tsup",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "build": "tsc",
-    "build:clean": "rm -rf dist && tsc",
     "type-check": "tsc --noEmit",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
