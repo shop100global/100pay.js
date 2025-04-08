@@ -102,4 +102,4 @@ This format helps with automatic generation of changelogs and version management
 
 ## License
 
-By contributing to the 100Pay SDK, you agree that your contributions will be licensed under its [MIT License](LICENSE).
+By contributing to the 100Pay SDK, you agree that your contributions will be licensed under its [MIT License](LICENSE.md).
