@@ -25,6 +25,8 @@
     "README.md"
   ],
   "scripts": {
+    "start": "npm run build",
+    "dev": "nodemon",
     "build": "tsup",
     "build:clean": "rm -rf dist && tsup",
     "test": "jest",

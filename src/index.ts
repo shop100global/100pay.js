@@ -1,5 +1,9 @@
 import axios, { AxiosError, AxiosResponse } from "axios";
 import * as crypto from "crypto";
+import {
+  CreateSubAccountData,
+  CreateSubAccountResponse,
+} from "./types/subAccount";
 
 // Interface for constructor parameters
 interface IPay100Config {
@@ -170,6 +174,19 @@ export class Pay100 {
     }
   };
 
+  // subaccount methods
+  subaccounts = {
+    create: async (
+      data: CreateSubAccountData
+    ): Promise<CreateSubAccountResponse> => {
+      return this.request<CreateSubAccountResponse>(
+        "POST",
+        "/api/v1/assets/subaccount/create",
+        data
+      );
+    },
+  };
+
   /**
    * Generic method to make authenticated API calls
    * @param method HTTP method
@@ -212,3 +229,5 @@ export class Pay100 {
     }
   }
 }
+
+export * from "./types";
