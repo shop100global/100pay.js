@@ -1,27 +1,16 @@
-# 100Pay Checkout
+# 100Pay SDK
 
-Accept crypto payments on your website in 3 mins
-
-<!--
-## ✋ ✋ PACKAGE HAS BEEN DISCONTINUED
-## Please 👉 [click here](https://npmjs.com/@100pay-hq/checkout) for the updated package 📦 -->
-
-## Getting Started
-
-Before you can start accepting crypto payments, you need to create a [100pay account](https://100pay.co) and obtain your API keys from the [100Developers platform](https://100pay.co)
-
-For API documentation, please click here 👉 [100Developers API documentation](https://documenter.getpostman.com/view/13045730/2s93RMUatE)
+A TypeScript library for integrating with the 100Pay payment platform, enabling developers to easily accept cryptocurrency payments.
 
 ## Features
 
-* Verify Crypto payments
-* Bulk Transfers
-* Crypto Transfers
-* Crypto Payments
+- ✅ Verify cryptocurrency payments
+- ✅ Create and manage subaccounts
+- ✅ Make cryptocurrency transfers
+- ✅ Full TypeScript support with comprehensive typing
+- ✅ Secure server-to-server communication with request signing
 
 ## Installation
-
-Install the package using npm:
 
 ```bash
 npm install @100pay-hq/100pay.js
@@ -33,60 +22,13 @@ Or using yarn:
 yarn add @100pay-hq/100pay.js
 ```
 
-## TypeScript Support
-
-This package is fully written in TypeScript and includes type definitions. No additional type packages are required.
-
-## Breaking Changes from JavaScript Version
-
-The TypeScript version includes some breaking changes from the original JavaScript version:
-
-1. The SDK now uses `axios` instead of `request` for HTTP requests
-2. Proper error handling with typed errors (`PaymentVerificationError`)
-3. Stricter type checking for method parameters and return values
-4. Constructor now requires an object with `publicKey` and `secretKey` properties
-
-## Usage
-
-### TypeScript
+## Quick Start
 
 ```typescript
-import { _100Pay } from '@100pay-hq/100pay.js';
+import { Pay100 } from '@100pay-hq/100pay.js';
 
 // Initialize the 100Pay client
-const payClient = new _100Pay({
-  publicKey: 'your_public_key',
-  secretKey: 'your_secret_key'
-});
-
-// Verify a transaction
-async function verifyTransaction(transactionId: string) {
-  try {
-    const result = await payClient.verify(transactionId);
-    
-    if (result.status === 'success') {
-      console.log('Transaction verified:', result.data);
-      return result.data;
-    } else {
-      console.error('Verification failed:', result.message);
-      return null;
-    }
-  } catch (error) {
-    if (error instanceof Error) {
-      console.error('Error:', error.message);
-    }
-    throw error;
-  }
-}
-```
-
-### JavaScript (CommonJS)
-
-```javascript
-const { _100Pay } = require('@100pay-hq/100pay.js');
-
-// Initialize the 100Pay client
-const payClient = new _100Pay({
+const client = new Pay100({
   publicKey: 'your_public_key',
   secretKey: 'your_secret_key'
 });
@@ -94,7 +36,7 @@ const payClient = new _100Pay({
 // Verify a transaction
 async function verifyTransaction(transactionId) {
   try {
-    const result = await payClient.verify(transactionId);
+    const result = await client.verify(transactionId);
     
     if (result.status === 'success') {
       console.log('Transaction verified:', result.data);
@@ -112,77 +54,201 @@ async function verifyTransaction(transactionId) {
 
 ## API Reference
 
-### Constructor
+### Initialization
 
 ```typescript
-new _100Pay({
-  publicKey: string;
-  secretKey: string;
-})
+const client = new Pay100({
+  publicKey: string,  // Your 100Pay public API key (required)
+  secretKey?: string, // Your 100Pay secret API key (required for server-side operations)
+  baseUrl?: string    // Optional custom API base URL
+});
 ```
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| publicKey | string | Your 100Pay public API key |
-| secretKey | string | Your 100Pay secret API key |
-
-### Methods
-
-#### verify(transactionId: string): Promise<VerifyResponse>
-
-Verifies a crypto payment transaction.
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| transactionId | string | The ID of the transaction to verify |
-
-Returns a Promise that resolves to a `VerifyResponse` object:
+### Transaction Verification
 
 ```typescript
-interface VerifyResponse {
-  status: 'success' | 'error';
-  data: TransactionData | Record<string, never>;
+// Verify a crypto payment transaction
+const result = await client.verify(transactionId);
+```
+
+**Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| transactionId | string | The unique ID of the transaction to verify |
+
+**Returns:**
+
+```typescript
+interface IVerifyResponse {
+  status: "success" | "error";
+  data: ITransactionData | Record<string, never>;
   message?: string;
 }
 ```
 
+**Example:**
+
+```typescript
+try {
+  const result = await client.verify("tx_123456789");
+  
+  if (result.status === 'success') {
+    // Payment is valid
+    const { amount, currency, status } = result.data;
+    // Process order fulfillment
+  } else {
+    // Payment verification failed
+    console.error(result.message);
+  }
+} catch (error) {
+  // Handle verification error
+  if (error instanceof PaymentVerificationError) {
+    console.error(`Payment verification failed: ${error.message}`);
+  }
+}
+```
+
+### Subaccounts
+
+Subaccounts allow you to create and manage separate accounts under your main account.
+
+```typescript
+// Create a subaccount
+const subaccount = await client.subaccounts.create({
+  name: "Partner Store",
+  email: "partner@example.com",
+  // Additional properties as needed
+});
+```
+
+**Parameters:**
+
+```typescript
+interface CreateSubAccountData {
+  name: string;
+  email: string;
+  // Additional properties defined in types
+}
+```
+
+**Returns:**
+
+```typescript
+interface CreateSubAccountResponse {
+  status: string;
+  message: string;
+  data: {
+    // Subaccount properties
+  };
+}
+```
+
+### Generic API Requests
+
+The SDK provides a generic `request` method for making any API call to the 100Pay API:
+
+```typescript
+const response = await client.request<ResponseType>(
+  method,   // 'GET', 'POST', 'PUT', or 'DELETE'
+  endpoint, // API endpoint path
+  data      // Request payload
+);
+```
+
+## Error Handling
+
+The SDK provides typed error handling:
+
+```typescript
+try {
+  const result = await client.verify(transactionId);
+  // Process result
+} catch (error) {
+  if (error instanceof PaymentVerificationError) {
+    // Handle payment verification specific error
+    console.error(`Payment verification failed: ${error.message}`);
+  } else if (error instanceof Error) {
+    // Handle general error
+    console.error(`API error: ${error.message}`);
+  }
+}
+```
+
+## Security and Authentication
+
+This SDK implements secure authentication with 100Pay using API keys and request signing for server-to-server communications. All requests that require authentication automatically include the necessary headers with timestamps and signatures.
+
+## TypeScript Support
+
+This package is built with TypeScript and includes full type definitions. The main types are exported for your convenience:
+
+```typescript
+import { Pay100, PaymentVerificationError, CreateSubAccountData } from '@100pay-hq/100pay.js';
+```
+
+## Common Use Cases
+
+### Accepting Cryptocurrency Payments
+
+1. Initialize the SDK with your API keys
+2. When a payment is received, use the `verify` method to confirm the transaction
+3. Process the order or service based on the verification result
+
+### Creating Subaccounts for Partners or Marketplaces
+
+```typescript
+const subaccount = await client.subaccounts.create({
+  name: "Partner Name",
+  email: "partner@example.com"
+});
+
+// Save the subaccount information for future use
+console.log(`Created subaccount: ${subaccount.data.id}`);
+```
+
+## Resources
+
+- [100Pay Platform](https://100pay.co)
+- [100Developers Portal](https://100pay.co) - Get your API keys here
+- [API Documentation](https://documenter.getpostman.com/view/13045730/2s93RMUatE)
+
 ## Development
 
-### Setup
+### Building from Source
 
-1. Clone the repository:
+```bash
+# Clone the repository
+git clone https://github.com/shop100global/100pay.js.git
+cd 100pay.js
 
-   ```bash
-   git clone https://github.com/shop100global/100pay.js.git
-   cd 100pay.js
-   ```
+# Install dependencies
+npm install
 
-2. Install dependencies:
+# Build the project
+npm run build
+```
 
-   ```bash
-   npm install
-   ```
+### Available Scripts
 
-3. Build the project:
+- `npm run build` - Build the TypeScript code
+- `npm run build:clean` - Clean the dist directory and build
+- `npm run test` - Run tests
+- `npm run lint` - Lint the code
+- `npm run lint:fix` - Lint and fix code
 
-   ```bash
-   npm run build
-   ```
+## Migration from JavaScript Version
 
-### Scripts
+The TypeScript version includes some improvements over the original JavaScript version:
 
-The following npm scripts are available:
+1. Uses `axios` instead of the deprecated `request` library
+2. Better error handling with typed errors
+3. Stricter type checking for method parameters and return values
+4. Object-based constructor for better flexibility
 
-* `npm run build` - Build the TypeScript code
-* `npm run build:clean` - Clean the dist directory and build
-* `npm run type-check` - Check TypeScript types without emitting files
-* `npm run test` - Run tests
-* `npm run test:watch` - Run tests in watch mode
-* `npm run test:coverage` - Run tests with coverage report
-* `npm run lint` - Lint the code
-* `npm run lint:fix` - Lint and fix code
-* `npm run verify` - Run linting, tests, and build
+If you're migrating from the JavaScript version, note that the constructor now requires an object parameter rather than individual arguments.
 
-## Note on HTTP Client
+## License
 
-This package has migrated from the deprecated `request` library to `axios` for making HTTP requests. This provides better TypeScript support and improved error handling.
+[Include your license information here]
+

@@ -8,7 +8,7 @@ import {
 // Interface for constructor parameters
 interface IPay100Config {
   publicKey: string;
-  secretKey: string;
+  secretKey?: string;
   baseUrl?: string;
 }
 
@@ -48,8 +48,9 @@ export class PaymentVerificationError extends Error {
 }
 
 export class Pay100 {
+  // optional
   private publicKey: string;
-  private secretKey: string;
+  private secretKey?: string;
   private baseUrl: string;
 
   constructor({ publicKey, secretKey, baseUrl = BASE_URL }: IPay100Config) {
@@ -69,9 +70,26 @@ export class Pay100 {
   } {
     const timestamp = Date.now().toString();
 
+    // Extract the token part from the secret key if it's in the format
+    // STATUS;TYPE;TOKEN (e.g., "LIVE;SK;eyJhbGciOiJIUzI1...")
+    let signingSecret = this?.secretKey;
+
+    if (this?.secretKey?.includes(";")) {
+      const secretKeyParts = this.secretKey.split(";");
+      if (secretKeyParts.length === 3) {
+        // Use just the token part as the signing secret
+        // This matches what the server expects in the verifySignature middleware
+        signingSecret = secretKeyParts[2];
+      }
+    }
+
+    if (!signingSecret) {
+      throw new Error("Secret key is required for signing");
+    }
+
     // Create signature using HMAC SHA-256
     const signature = crypto
-      .createHmac("sha256", this.secretKey)
+      .createHmac("sha256", signingSecret)
       .update(timestamp + JSON.stringify(payload))
       .digest("hex");
 
@@ -88,13 +106,19 @@ export class Pay100 {
     payload: Record<string, unknown> = {}
   ): Record<string, string> {
     // Generate signature based on payload
-    const { timestamp, signature } = this.createSignature(payload);
 
+    if (this.secretKey) {
+      const { timestamp, signature } = this.createSignature(payload);
+      return {
+        "api-key": this.publicKey,
+        "x-secret-key": this.secretKey,
+        "x-timestamp": timestamp,
+        "x-signature": signature,
+        "Content-Type": "application/json",
+      };
+    }
     return {
       "api-key": this.publicKey,
-      "x-secret-key": this.secretKey,
-      "x-timestamp": timestamp,
-      "x-signature": signature,
       "Content-Type": "application/json",
     };
   }
