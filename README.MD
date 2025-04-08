@@ -250,5 +250,4 @@ If you're migrating from the JavaScript version, note that the constructor now r
 
 ## License
 
-[Include your license information here]
-
+[MIT License](LICENSE).
