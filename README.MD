@@ -1,12 +1,13 @@
 # 100Pay SDK
 
-A TypeScript library for integrating with the 100Pay payment platform, enabling developers to easily accept cryptocurrency payments.
+A TypeScript library for integrating with the 100Pay payment platform, enabling developers to easily accept cryptocurrency payments and manage transactions.
 
 ## Features
 
 - ✅ Verify cryptocurrency payments
 - ✅ Create and manage subaccounts
-- ✅ Make cryptocurrency transfers
+- ✅ Preview currency conversions
+- ✅ Make authenticated API requests
 - ✅ Full TypeScript support with comprehensive typing
 - ✅ Secure server-to-server communication with request signing
 
@@ -30,7 +31,7 @@ import { Pay100 } from '@100pay-hq/100pay.js';
 // Initialize the 100Pay client
 const client = new Pay100({
   publicKey: 'your_public_key',
-  secretKey: 'your_secret_key'
+  secretKey: 'your_secret_key' // Required for server-side operations
 });
 
 // Verify a transaction
@@ -60,7 +61,7 @@ async function verifyTransaction(transactionId) {
 const client = new Pay100({
   publicKey: string,  // Your 100Pay public API key (required)
   secretKey?: string, // Your 100Pay secret API key (required for server-side operations)
-  baseUrl?: string    // Optional custom API base URL
+  baseUrl?: string    // Optional custom API base URL (defaults to https://api.100pay.co)
 });
 ```
 
@@ -144,6 +145,43 @@ interface CreateSubAccountResponse {
 }
 ```
 
+### Currency Conversion
+
+Preview currency conversion rates and fees:
+
+```typescript
+// Preview a currency conversion
+const conversion = await client.conversion.preview({
+  amount: 100,
+  fromSymbol: "BTC",
+  toSymbol: "USDT",
+  appId: "your_app_id" // Optional
+});
+```
+
+**Parameters:**
+
+```typescript
+interface CurrencyConversionPayload {
+  amount: number;
+  fromSymbol: string;
+  toSymbol: string;
+  appId?: string;
+}
+```
+
+**Returns:**
+
+```typescript
+interface CurrencyConversionResult {
+  status: string;
+  message: string;
+  data: {
+    // Conversion details including rates and fees
+  };
+}
+```
+
 ### Generic API Requests
 
 The SDK provides a generic `request` method for making any API call to the 100Pay API:
@@ -153,6 +191,16 @@ const response = await client.request<ResponseType>(
   method,   // 'GET', 'POST', 'PUT', or 'DELETE'
   endpoint, // API endpoint path
   data      // Request payload
+);
+```
+
+**Example:**
+
+```typescript
+// Get user balance
+const balance = await client.request<BalanceResponse>(
+  'GET',
+  '/api/v1/user/balance'
 );
 ```
 
@@ -177,14 +225,25 @@ try {
 
 ## Security and Authentication
 
-This SDK implements secure authentication with 100Pay using API keys and request signing for server-to-server communications. All requests that require authentication automatically include the necessary headers with timestamps and signatures.
+This SDK implements secure authentication with 100Pay using API keys and request signing for server-to-server communications:
+
+1. Each request is signed with HMAC SHA-256 using your secret key
+2. Signatures include a timestamp to prevent replay attacks
+3. All requests include your public API key for identification
+
+Client-side operations can use public key only, while server-side operations require both public and secret keys.
 
 ## TypeScript Support
 
 This package is built with TypeScript and includes full type definitions. The main types are exported for your convenience:
 
 ```typescript
-import { Pay100, PaymentVerificationError, CreateSubAccountData } from '@100pay-hq/100pay.js';
+import { 
+  Pay100, 
+  PaymentVerificationError, 
+  CreateSubAccountData,
+  CurrencyConversionPayload 
+} from '@100pay-hq/100pay.js';
 ```
 
 ## Common Use Cases
@@ -205,6 +264,22 @@ const subaccount = await client.subaccounts.create({
 
 // Save the subaccount information for future use
 console.log(`Created subaccount: ${subaccount.data.id}`);
+```
+
+### Currency Conversion Preview
+
+```typescript
+// Get conversion rates before executing a trade
+const preview = await client.conversion.preview({
+  amount: 1000,
+  fromSymbol: "USDT",
+  toSymbol: "BTC"
+});
+
+// Show user the conversion details
+console.log(`You will receive approximately ${preview.data.receivedAmount} ${preview.data.toSymbol}`);
+console.log(`Exchange rate: 1 ${preview.data.fromSymbol} = ${preview.data.rate} ${preview.data.toSymbol}`);
+console.log(`Fee: ${preview.data.fee} ${preview.data.fromSymbol}`);
 ```
 
 ## Resources
@@ -237,17 +312,6 @@ npm run build
 - `npm run lint` - Lint the code
 - `npm run lint:fix` - Lint and fix code
 
-## Migration from JavaScript Version
-
-The TypeScript version includes some improvements over the original JavaScript version:
-
-1. Uses `axios` instead of the deprecated `request` library
-2. Better error handling with typed errors
-3. Stricter type checking for method parameters and return values
-4. Object-based constructor for better flexibility
-
-If you're migrating from the JavaScript version, note that the constructor now requires an object parameter rather than individual arguments.
-
 ## License
 
-[MIT License](LICENSE.md).
+[MIT License](LICENSE.md)
