@@ -1,23 +1,37 @@
+// src/index.ts
+
 import axios, { AxiosError, AxiosResponse } from "axios";
 import * as crypto from "crypto";
 import {
   CreateSubAccountData,
   CreateSubAccountResponse,
 } from "./types/subAccount";
+import { CurrencyConversionPayload, CurrencyConversionResult } from "./types";
 
-// Interface for constructor parameters
+/**
+ * Configuration interface for initializing the Pay100 SDK
+ * @property publicKey - API public key required for all API calls
+ * @property secretKey - Secret key used for server-side authentication and request signing
+ * @property baseUrl - Optional API base URL, defaults to production endpoint
+ */
 interface IPay100Config {
   publicKey: string;
   secretKey?: string;
   baseUrl?: string;
 }
 
-// Interface for transaction data from API
+/**
+ * Interface representing transaction data returned from payment verification
+ * Flexible structure to accommodate various transaction types and properties
+ */
 interface ITransactionData {
-  [key: string]: unknown; // For flexibility, since we don't know the exact structure
+  [key: string]: unknown;
 }
 
-// Interface for raw API response
+/**
+ * Interface for raw API responses before processing
+ * Provides a flexible structure while capturing common response elements
+ */
 interface IRawApiResponse {
   status?: string;
   message?: string;
@@ -25,16 +39,25 @@ interface IRawApiResponse {
   [key: string]: unknown;
 }
 
-// Interface for API success response
+/**
+ * Standardized response interface for transaction verification
+ * @property status - Result status ('success' or 'error')
+ * @property data - Transaction details when successful, empty object on failure
+ * @property message - Optional response message, typically present on errors
+ */
 interface IVerifyResponse {
   status: "success" | "error";
   data: ITransactionData | Record<string, never>;
   message?: string;
 }
 
+// Default API endpoint if not otherwise specified
 const BASE_URL = process.env.BASE_URL || "https://api.100pay.co";
 
-// Error type for payment verification
+/**
+ * Custom error class for payment verification failures
+ * Provides consistent error structure for better error handling
+ */
 export class PaymentVerificationError extends Error {
   status: string;
   data: Record<string, never>;
@@ -47,12 +70,20 @@ export class PaymentVerificationError extends Error {
   }
 }
 
+/**
+ * Main SDK class for interacting with the 100Pay payment platform
+ * Provides methods for transaction verification, subaccount management,
+ * and currency conversion
+ */
 export class Pay100 {
-  // optional
   private publicKey: string;
   private secretKey?: string;
   private baseUrl: string;
 
+  /**
+   * Initialize the Pay100 SDK
+   * @param config - Configuration object containing API keys and optional base URL
+   */
   constructor({ publicKey, secretKey, baseUrl = BASE_URL }: IPay100Config) {
     this.publicKey = publicKey;
     this.secretKey = secretKey;
@@ -60,9 +91,11 @@ export class Pay100 {
   }
 
   /**
-   * Creates a request signature for secure server-to-server communication
-   * @param payload Request payload to sign
-   * @returns Object containing timestamp and signature
+   * Creates a cryptographic signature for secure server-to-server communication
+   *
+   * @param payload - Request payload that needs to be signed
+   * @returns Object containing current timestamp and HMAC SHA-256 signature
+   * @throws Error if secret key is missing or invalid
    */
   private createSignature(payload: Record<string, unknown>): {
     timestamp: string;
@@ -78,7 +111,6 @@ export class Pay100 {
       const secretKeyParts = this.secretKey.split(";");
       if (secretKeyParts.length === 3) {
         // Use just the token part as the signing secret
-        // This matches what the server expects in the verifySignature middleware
         signingSecret = secretKeyParts[2];
       }
     }
@@ -97,16 +129,15 @@ export class Pay100 {
   }
 
   /**
-   * Create common headers for API requests
-   * @param additionalHeaders Additional headers to include
-   * @param payload Payload to sign (if signature is needed)
-   * @returns Headers object
+   * Constructs HTTP headers for API requests with optional authentication
+   *
+   * @param payload - Request payload used to generate security signature
+   * @returns Object containing all necessary HTTP headers
    */
   private getHeaders(
     payload: Record<string, unknown> = {}
   ): Record<string, string> {
-    // Generate signature based on payload
-
+    // Generate authentication headers if secret key is available (server-side mode)
     if (this.secretKey) {
       const { timestamp, signature } = this.createSignature(payload);
       return {
@@ -117,6 +148,8 @@ export class Pay100 {
         "Content-Type": "application/json",
       };
     }
+
+    // Basic headers for public API usage (client-side mode)
     return {
       "api-key": this.publicKey,
       "Content-Type": "application/json",
@@ -124,9 +157,11 @@ export class Pay100 {
   }
 
   /**
-   * Verify a transaction
-   * @param transactionId Transaction ID to verify
-   * @returns Promise resolving to verification result
+   * Verifies the status and details of a payment transaction
+   *
+   * @param transactionId - Unique identifier of the transaction to verify
+   * @returns Promise resolving to verification result with transaction data
+   * @throws PaymentVerificationError on network issues or invalid responses
    */
   verify = async (transactionId: string): Promise<IVerifyResponse> => {
     try {
@@ -182,7 +217,7 @@ export class Pay100 {
         data: transactionData,
       };
     } catch (error) {
-      // Handle Axios errors
+      // Handle Axios errors with detailed message
       if (axios.isAxiosError(error)) {
         const axiosError = error as AxiosError;
         throw new PaymentVerificationError(
@@ -191,15 +226,25 @@ export class Pay100 {
         );
       }
 
-      // Handle other errors
+      // Handle other errors with appropriate message
       throw new PaymentVerificationError(
         error instanceof Error ? error.message : "An unknown error occurred"
       );
     }
   };
 
-  // subaccount methods
+  /**
+   * Namespace for subaccount management operations
+   * Provides methods to create and manage subaccounts
+   */
   subaccounts = {
+    /**
+     * Creates a new subaccount within the platform
+     *
+     * @param data - Subaccount configuration including owner details and supported currencies
+     * @returns Promise resolving to the created subaccount details
+     * @throws Error if the request fails or returns invalid data
+     */
     create: async (
       data: CreateSubAccountData
     ): Promise<CreateSubAccountResponse> => {
@@ -212,11 +257,41 @@ export class Pay100 {
   };
 
   /**
-   * Generic method to make authenticated API calls
-   * @param method HTTP method
-   * @param endpoint API endpoint
-   * @param data Request payload
-   * @returns Promise resolving to API response
+   * Namespace for currency conversion operations
+   * Provides methods to calculate exchange rates and fees
+   */
+  conversion = {
+    /**
+     * Calculates a preview of currency conversion with rates and fees
+     *
+     * @param data - Conversion details including amount, source and target currencies
+     * @returns Promise resolving to detailed conversion calculation
+     * @throws Error if the request fails or returns invalid data
+     */
+    preview: async (
+      data: CurrencyConversionPayload
+    ): Promise<CurrencyConversionResult> => {
+      return this.request<CurrencyConversionResult>(
+        "POST",
+        "/api/v1/user/preview-convert-asset",
+        {
+          amount: data.amount,
+          to_symbol: data.toSymbol,
+          from_symbol: data.fromSymbol,
+          appId: data.appId,
+        }
+      );
+    },
+  };
+
+  /**
+   * Generic method to make authenticated API requests to any endpoint
+   *
+   * @param method - HTTP method to use (GET, POST, PUT, DELETE)
+   * @param endpoint - API endpoint path (will be appended to base URL)
+   * @param data - Request payload or query parameters
+   * @returns Promise resolving to the typed API response
+   * @throws Error with detailed message on request failure
    */
   async request<T>(
     method: "GET" | "POST" | "PUT" | "DELETE",

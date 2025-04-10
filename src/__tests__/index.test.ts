@@ -1,6 +1,11 @@
 import axios from "axios";
 import crypto from "crypto";
-import { Pay100, PaymentVerificationError } from "../index";
+import {
+  CreateSubAccountData,
+  CurrencyConversionPayload,
+  Pay100,
+  PaymentVerificationError,
+} from "../index";
 
 jest.mock("axios");
 jest.mock("crypto", () => ({
@@ -306,6 +311,201 @@ describe("Pay100", () => {
       // Fix accessing any type with proper type casting
       expect((instance as unknown as { baseUrl: string }).baseUrl).toBe(
         "https://test-api.example.com"
+      );
+    });
+  });
+  describe("subaccounts", () => {
+    let pay100: Pay100;
+
+    beforeEach(() => {
+      pay100 = new Pay100({
+        publicKey: "test_public_key",
+        secretKey: "test_secret_key",
+      });
+      jest.clearAllMocks();
+
+      // Mock Date.now() to return a consistent timestamp for testing
+      jest.spyOn(Date, "now").mockReturnValue(1234567890000);
+    });
+
+    it("should create a sub account successfully", async () => {
+      const mockResponse = {
+        status: "success",
+        data: {
+          id: "1",
+          name: "Test Account",
+          email: "test@example.com",
+          status: "active",
+        },
+      };
+
+      (
+        axios as unknown as jest.MockedFunction<typeof axios>
+      ).mockResolvedValueOnce({
+        data: mockResponse,
+      });
+
+      const subaccountData: CreateSubAccountData = {
+        symbols: ["USDT"],
+        networks: ["bsc"],
+        owner: {
+          name: "originalmiracleio2",
+          email: "miracleficient@gmail.com",
+          phone: "+234813 515 5549",
+        },
+        metadata: {},
+      };
+
+      const result = await pay100.subaccounts.create(subaccountData);
+      expect(result).toEqual(mockResponse);
+      expect(axios).toHaveBeenCalledWith({
+        method: "POST",
+        url: "https://api.100pay.co/api/v1/assets/subaccount/create",
+        headers: {
+          "api-key": config.publicKey,
+          "x-secret-key": config.secretKey,
+          "x-timestamp": "1234567890000",
+          "x-signature": "mocked_signature",
+          "Content-Type": "application/json",
+        },
+        data: subaccountData,
+        params: undefined,
+      });
+    });
+
+    it("should handle error when creating sub account", async () => {
+      const errorResponse = new Error("API Request Failed: Email already exists") as Error & {
+        response: {
+          data: {
+            message: string;
+          };
+          status: number;
+        };
+        isAxiosError: boolean;
+      };
+
+      errorResponse.response = {
+        data: {
+          message: "Email already exists",
+        },
+        status: 400,
+      };
+      errorResponse.isAxiosError = true;
+
+      (
+        axios as unknown as jest.MockedFunction<typeof axios>
+      ).mockRejectedValueOnce(errorResponse);
+
+      const subaccountData = {
+        symbols: ["USDT"],
+        networks: ["bsc"],
+        owner: {
+          name: "originalmiracleio2",
+          email: "miracleficient@gmail.com",
+          phone: "+234813 515 5549",
+        },
+        metadata: {},
+      };
+
+      await expect(pay100.subaccounts.create(subaccountData)).rejects.toThrow(
+        "API Request Failed: Email already exists"
+      );
+    });
+  });
+
+  describe("conversion", () => {
+    let pay100: Pay100;
+
+    beforeEach(() => {
+      pay100 = new Pay100({
+        publicKey: "test_public_key",
+        secretKey: "test_secret_key",
+      });
+      jest.clearAllMocks();
+
+      // Mock Date.now() to return a consistent timestamp for testing
+      jest.spyOn(Date, "now").mockReturnValue(1234567890000);
+    });
+
+    it("should get currency conversion preview", async () => {
+      const mockResponse = {
+        status: "success",
+        data: {
+          fromAmount: "100",
+          toAmount: "85",
+          fromCurrency: "USDT",
+          toCurrency: "USD",
+          rate: "0.85",
+        },
+      };
+
+      (
+        axios as unknown as jest.MockedFunction<typeof axios>
+      ).mockResolvedValueOnce({
+        data: mockResponse,
+      });
+
+      const conversionData: CurrencyConversionPayload = {
+        amount: 100,
+        fromSymbol: "USDT",
+        toSymbol: "USD",
+        appId: "app123",
+      };
+
+      const result = await pay100.conversion.preview(conversionData);
+      expect(result).toEqual(mockResponse);
+      expect(axios).toHaveBeenCalledWith({
+        method: "POST",
+        url: "https://api.100pay.co/api/v1/user/preview-convert-asset",
+        headers: {
+          "api-key": config.publicKey,
+          "x-secret-key": config.secretKey,
+          "x-timestamp": "1234567890000",
+          "x-signature": "mocked_signature",
+          "Content-Type": "application/json",
+        },
+        data: {
+          amount: 100,
+          from_symbol: "USDT",
+          to_symbol: "USD",
+          appId: "app123",
+        },
+        params: undefined,
+      });
+    });
+
+    it("should handle invalid currency error during conversion preview", async () => {
+      const errorResponse = new Error("API Request Failed: Invalid currency pair") as Error & {
+        response: {
+          data: {
+            message: string;
+          };
+          status: number;
+        };
+        isAxiosError: boolean;
+      };
+
+      errorResponse.response = {
+        data: {
+          message: "Invalid currency pair",
+        },
+        status: 400,
+      };
+      errorResponse.isAxiosError = true;
+
+      (
+        axios as unknown as jest.MockedFunction<typeof axios>
+      ).mockRejectedValueOnce(errorResponse);
+
+      const conversionData: CurrencyConversionPayload = {
+        amount: 100,
+        fromSymbol: "INVALID",
+        toSymbol: "USD",
+        appId: "app123",
+      };
+
+      await expect(pay100.conversion.preview(conversionData)).rejects.toThrow(
+        "API Request Failed: Invalid currency pair"
       );
     });
   });
