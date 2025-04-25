@@ -117,9 +117,17 @@ Subaccounts allow you to create and manage separate accounts under your main acc
 ```typescript
 // Create a subaccount
 const subaccount = await client.subaccounts.create({
-  name: "Partner Store",
-  email: "partner@example.com",
-  // Additional properties as needed
+  symbols: ["BTC", "ETH", "USDT"],
+  networks: ["ETHEREUM", "BSC"],
+  owner: {
+    name: "Partner Store",
+    email: "partner@example.com",
+    phone: "+1234567890"
+  },
+  metadata: {
+    storeId: "store-123",
+    region: "US"
+  }
 });
 ```
 
@@ -127,9 +135,14 @@ const subaccount = await client.subaccounts.create({
 
 ```typescript
 interface CreateSubAccountData {
-  name: string;
-  email: string;
-  // Additional properties defined in types
+  symbols: string[];            // List of supported cryptocurrencies
+  networks: string[];           // List of supported blockchain networks
+  owner: {
+    name: string;               // Owner's name
+    email: string;              // Owner's email
+    phone: string;              // Owner's phone number
+  };
+  metadata: Record<string, unknown>; // Custom metadata for the subaccount
 }
 ```
 
@@ -137,11 +150,88 @@ interface CreateSubAccountData {
 
 ```typescript
 interface CreateSubAccountResponse {
-  status: string;
   message: string;
-  data: {
-    // Subaccount properties
+  accounts: Account[];
+}
+
+interface Account {
+  balance: {
+    available: number | null;
+    locked: number | null;
   };
+  accountType: string;         // e.g. "subaccount"
+  walletType: string;          // e.g. "crypto"
+  status: string;              // e.g. "active"
+  _id: string;
+  name: string;                // e.g. "Tether USDT"
+  symbol: string;              // e.g. "USDT"
+  decimals: string;            // e.g. "18"
+  account: AccountDetails;
+  contractAddress: string;
+  logo: string;
+  userId: string;
+  appId: string;
+  network: string;
+  ownerId: string;
+  parentWallet: string;
+  __v: number;
+}
+
+interface AccountDetails {
+  address: string;
+  key: Key;
+  network: string;
+}
+
+interface Key {
+  version: number;
+  id: string;
+  address: string;
+  crypto: Crypto;
+}
+
+interface Crypto {
+  ciphertext: string;
+  cipherparams: {
+    iv: string;
+  };
+  cipher: string;
+  kdf: string;
+  kdfparams: {
+    dklen: number;
+    salt: string;
+    n: number;
+    r: number;
+    p: number;
+  };
+  mac: string;
+}
+```
+
+**Example:**
+
+```typescript
+try {
+  const result = await client.subaccounts.create({
+    symbols: ["USDT", "BTC"], 
+    networks: ["ETHEREUM"],
+    owner: {
+      name: "Merchant Store",
+      email: "merchant@example.com",
+      phone: "+1234567890"
+    },
+    metadata: {
+      businessType: "ecommerce"
+    }
+  });
+  
+  console.log(`Created ${result.accounts.length} accounts for the subaccount`);
+  // Store wallet addresses for each account
+  result.accounts.forEach(account => {
+    console.log(`${account.symbol} wallet: ${account.account.address}`);
+  });
+} catch (error) {
+  console.error(`Failed to create subaccount: ${error.message}`);
 }
 ```
 
@@ -163,10 +253,10 @@ const conversion = await client.conversion.preview({
 
 ```typescript
 interface CurrencyConversionPayload {
-  amount: number;
-  fromSymbol: string;
-  toSymbol: string;
-  appId?: string;
+  amount: number;      // Amount to convert
+  fromSymbol: string;  // Source currency symbol
+  toSymbol: string;    // Target currency symbol
+  appId?: string;      // Optional application ID
 }
 ```
 
@@ -174,11 +264,36 @@ interface CurrencyConversionPayload {
 
 ```typescript
 interface CurrencyConversionResult {
-  status: string;
-  message: string;
-  data: {
-    // Conversion details including rates and fees
-  };
+  convertedAmount: number;              // Final amount after conversion
+  totalAmount: number;                  // Total amount including fees
+  feeInUSD: number;                     // Fee amount in USD
+  feeInToCurrency: number;              // Fee amount in target currency
+  feeInfromSymbol: number;              // Fee amount in source currency
+  conversionFeeInUSD: number;           // Conversion fee in USD
+  conversionFeeInToCurrency: number;    // Conversion fee in target currency
+  conversionFeeInfromSymbol: number;    // Conversion fee in source currency
+  fromRate: number;                     // Exchange rate for source currency
+  toRate: number;                       // Exchange rate for target currency
+  intermediateUSDAmount: number;        // Intermediate amount in USD
+}
+```
+
+**Example:**
+
+```typescript
+try {
+  const preview = await client.conversion.preview({
+    amount: 0.5,
+    fromSymbol: "BTC",
+    toSymbol: "USDT"
+  });
+  
+  console.log(`Converting 0.5 BTC to USDT:`);
+  console.log(`You will receive: ${preview.convertedAmount} USDT`);
+  console.log(`Exchange rate: 1 BTC = ${preview.toRate / preview.fromRate} USDT`);
+  console.log(`Total fees: ${preview.feeInUSD} USD (${preview.feeInfromSymbol} BTC)`);
+} catch (error) {
+  console.error(`Conversion preview failed: ${error.message}`);
 }
 ```
 
@@ -242,7 +357,10 @@ import {
   Pay100, 
   PaymentVerificationError, 
   CreateSubAccountData,
-  CurrencyConversionPayload 
+  CurrencyConversionPayload,
+  CurrencyConversionResult,
+  Account,
+  AccountDetails
 } from '@100pay-hq/100pay.js';
 ```
 
@@ -258,12 +376,23 @@ import {
 
 ```typescript
 const subaccount = await client.subaccounts.create({
-  name: "Partner Name",
-  email: "partner@example.com"
+  symbols: ["BTC", "ETH", "USDT"],
+  networks: ["ETHEREUM"],
+  owner: {
+    name: "Partner Name",
+    email: "partner@example.com",
+    phone: "+1234567890"
+  },
+  metadata: {
+    partnerId: "partner-123"
+  }
 });
 
 // Save the subaccount information for future use
-console.log(`Created subaccount: ${subaccount.data.id}`);
+console.log(`Created subaccount with ${subaccount.accounts.length} wallets`);
+subaccount.accounts.forEach(account => {
+  console.log(`${account.symbol} wallet: ${account.account.address}`);
+});
 ```
 
 ### Currency Conversion Preview
@@ -277,9 +406,9 @@ const preview = await client.conversion.preview({
 });
 
 // Show user the conversion details
-console.log(`You will receive approximately ${preview.data.receivedAmount} ${preview.data.toSymbol}`);
-console.log(`Exchange rate: 1 ${preview.data.fromSymbol} = ${preview.data.rate} ${preview.data.toSymbol}`);
-console.log(`Fee: ${preview.data.fee} ${preview.data.fromSymbol}`);
+console.log(`You will receive approximately ${preview.convertedAmount} BTC`);
+console.log(`Exchange rate: 1 USDT = ${preview.toRate / preview.fromRate} BTC`);
+console.log(`Fee: ${preview.feeInfromSymbol} USDT (${preview.feeInUSD} USD)`);
 ```
 
 ## Resources
