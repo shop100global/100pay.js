@@ -1,5 +1,24 @@
 // src/types/transfer.ts
 
+export interface IWalletTransaction {
+  accountId: string;
+  subAccountId: string;
+  appId: string;
+  userId: string;
+  symbol: string;
+  from: string;
+  to: string;
+  type: "credit" | "debit"; // can be narrowed to 'credit' | 'debit' if strictly used that way
+  description: string;
+  failureReason: string;
+  transactionHash?: string | null;
+  transactionSignature: string;
+  status?: string; // default is "pending", but allow string if not restricted
+  amount: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
 /**
  * Input data for transferring assets between wallets
  */
@@ -56,27 +75,9 @@ export interface ITransferHistoryParams extends Record<string, unknown> {
 /**
  * Individual transfer history item
  */
-export interface ITransferHistoryItem {
-  /** Unique identifier for the transfer */
-  id: string;
-  /** Amount that was transferred */
-  amount: string | number;
-  /** Currency symbol of the transfer */
-  symbol: string;
-  /** Source address/account */
-  from: string;
-  /** Destination address/account */
-  to: string;
-  /** Status of the transfer (completed, pending, failed) */
-  status: string;
-  /** Timestamp of the transfer */
-  timestamp: string | number;
-  /** Type of transfer (internal, external) */
-  type: string;
-  /** Optional transaction note */
+export interface ITransferHistoryItem extends IWalletTransaction {
+  /** note for the transfer, if any */
   note?: string;
-  /** Transaction hash or reference */
-  hash?: string;
 }
 
 /**
