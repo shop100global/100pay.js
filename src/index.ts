@@ -7,6 +7,15 @@ import {
   CreateSubAccountResponse,
 } from "./types/subAccount";
 import { CurrencyConversionPayload, CurrencyConversionResult } from "./types";
+import {
+  ITransferAssetData,
+  ITransferAssetResponse,
+  ITransferHistoryParams,
+  ITransferHistoryResponse,
+  ITransferFeeParams,
+  ITransferFeeResponse,
+} from "./types/transfer";
+import { logger } from "@untools/logger";
 
 /**
  * Configuration interface for initializing the Pay100 SDK
@@ -73,7 +82,7 @@ export class PaymentVerificationError extends Error {
 /**
  * Main SDK class for interacting with the 100Pay payment platform
  * Provides methods for transaction verification, subaccount management,
- * and currency conversion
+ * currency conversion, and asset transfers
  */
 export class Pay100 {
   private publicKey: string;
@@ -248,6 +257,8 @@ export class Pay100 {
     create: async (
       data: CreateSubAccountData
     ): Promise<CreateSubAccountResponse> => {
+      // Make sure the networks are lowercase
+      data.networks = data.networks.map((network) => network.toLowerCase());
       return this.request<CreateSubAccountResponse>(
         "POST",
         "/api/v1/assets/subaccount/create",
@@ -285,6 +296,63 @@ export class Pay100 {
   };
 
   /**
+   * Namespace for asset transfer operations
+   * Provides methods to transfer assets, view history, and calculate fees
+   */
+  transfer = {
+    /**
+     * Transfer assets between wallets
+     *
+     * @param data - Transfer details including amount, currency, destination, and authentication
+     * @returns Promise resolving to transfer confirmation with receipt and transaction ID
+     * @throws Error if the transfer fails due to validation, insufficient funds, or other issues
+     */
+    executeTransfer: async (
+      data: ITransferAssetData
+    ): Promise<ITransferAssetResponse> => {
+      return this.request<ITransferAssetResponse>(
+        "POST",
+        "/api/v1/transfer/asset",
+        data
+      );
+    },
+
+    /**
+     * Get transfer history for the authenticated user
+     *
+     * @param params - Filtering and pagination parameters
+     * @returns Promise resolving to paginated transfer history records
+     * @throws Error if the request fails or authentication is invalid
+     */
+    getHistory: async (
+      params: ITransferHistoryParams
+    ): Promise<ITransferHistoryResponse> => {
+      return this.request<ITransferHistoryResponse>(
+        "GET",
+        "/api/v1/transfer/history",
+        params
+      );
+    },
+
+    /**
+     * Calculate transfer fees for a potential transaction
+     *
+     * @param params - Fee calculation parameters including currency and transfer type
+     * @returns Promise resolving to detailed fee breakdown
+     * @throws Error if the fee calculation fails or currency is not supported
+     */
+    calculateFee: async (
+      params: ITransferFeeParams
+    ): Promise<ITransferFeeResponse> => {
+      return this.request<ITransferFeeResponse>(
+        "GET",
+        "/api/v1/transfer/fee",
+        params
+      );
+    },
+  };
+
+  /**
    * Generic method to make authenticated API requests to any endpoint
    *
    * @param method - HTTP method to use (GET, POST, PUT, DELETE)
@@ -310,23 +378,124 @@ export class Pay100 {
         params: method === "GET" ? data : undefined,
       });
 
+      // Check if the response indicates an error despite a successful HTTP status
+      if (
+        response.data &&
+        typeof response.data === "object" &&
+        "success" in response.data
+      ) {
+        if ((response.data as { success?: boolean }).success === false) {
+          // Extract error from the API's own error indication
+          const errorMessage = this.extractErrorMessage(response.data);
+          throw new Error(`API Request Failed: ${errorMessage}`);
+        }
+      }
+
       return response.data as T;
     } catch (error) {
+      logger.error(error);
       if (axios.isAxiosError(error)) {
         const axiosError = error as AxiosError;
-        const errorMessage =
-          axiosError.response?.data &&
-          typeof axiosError.response.data === "object" &&
-          "message" in axiosError.response.data
-            ? String(axiosError.response.data.message)
-            : axiosError.message;
+        logger.error(axiosError?.response);
+
+        // Extract error message from response data if available
+        const errorMessage = axiosError.response?.data
+          ? this.extractErrorMessage(axiosError.response.data)
+          : axiosError.message;
 
         throw new Error(`API Request Failed: ${errorMessage}`);
       }
 
+      // Rethrow original error if not an Axios error
       throw error;
+    }
+  }
+
+  /**
+   * Extracts error message from various response data structures
+   *
+   * @param data - The response data object which may contain error information
+   * @returns The most specific error message available
+   */
+  private extractErrorMessage(data: unknown): string {
+    // If data is a string, return it directly
+    if (typeof data === "string") {
+      return data;
+    }
+
+    // If data is not an object or is null, return a generic message
+    if (typeof data !== "object" || data === null) {
+      return "Unknown error";
+    }
+
+    // Handle different error structures
+    const dataObj = data as Record<string, unknown>;
+
+    // Direct error message in data.message
+    if ("message" in dataObj && typeof dataObj.message === "string") {
+      return dataObj.message;
+    }
+
+    // Error object with message property
+    if ("error" in dataObj) {
+      const error = dataObj.error;
+
+      // String error
+      if (typeof error === "string") {
+        return error;
+      }
+
+      // Object error with message
+      if (error && typeof error === "object") {
+        const errorObj = error as Record<string, unknown>;
+
+        if ("message" in errorObj && typeof errorObj.message === "string") {
+          return errorObj.message;
+        }
+
+        // Try to get any useful information from the error object
+        if ("code" in errorObj && typeof errorObj.code === "string") {
+          return `Error code: ${errorObj.code}`;
+        }
+      }
+    }
+
+    // Look for error in the 'data' property
+    if ("data" in dataObj && dataObj.data && typeof dataObj.data === "object") {
+      const nestedData = dataObj.data as Record<string, unknown>;
+
+      if ("message" in nestedData && typeof nestedData.message === "string") {
+        return nestedData.message;
+      }
+
+      if (
+        "error" in nestedData &&
+        nestedData.error &&
+        typeof nestedData.error === "object"
+      ) {
+        const nestedError = nestedData.error as Record<string, unknown>;
+        if (
+          "message" in nestedError &&
+          typeof nestedError.message === "string"
+        ) {
+          return nestedError.message;
+        }
+      }
+    }
+
+    // If we have a statusText from the response, use that
+    if ("statusText" in dataObj && typeof dataObj.statusText === "string") {
+      return dataObj.statusText;
+    }
+
+    // Stringify the error if nothing else works
+    try {
+      return `Error details: ${JSON.stringify(dataObj)}`;
+    } catch {
+      return "Unknown error occurred";
     }
   }
 }
 
 export * from "./types";
+export * from "./types/transfer";

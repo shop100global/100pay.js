@@ -5,6 +5,9 @@ import {
   CurrencyConversionPayload,
   Pay100,
   PaymentVerificationError,
+  ITransferAssetData,
+  ITransferHistoryParams,
+  ITransferFeeParams,
 } from "../index";
 
 jest.mock("axios");
@@ -314,6 +317,7 @@ describe("Pay100", () => {
       );
     });
   });
+
   describe("subaccounts", () => {
     let pay100: Pay100;
 
@@ -374,7 +378,9 @@ describe("Pay100", () => {
     });
 
     it("should handle error when creating sub account", async () => {
-      const errorResponse = new Error("API Request Failed: Email already exists") as Error & {
+      const errorResponse = new Error(
+        "API Request Failed: Email already exists"
+      ) as Error & {
         response: {
           data: {
             message: string;
@@ -475,7 +481,9 @@ describe("Pay100", () => {
     });
 
     it("should handle invalid currency error during conversion preview", async () => {
-      const errorResponse = new Error("API Request Failed: Invalid currency pair") as Error & {
+      const errorResponse = new Error(
+        "API Request Failed: Invalid currency pair"
+      ) as Error & {
         response: {
           data: {
             message: string;
@@ -507,6 +515,382 @@ describe("Pay100", () => {
       await expect(pay100.conversion.preview(conversionData)).rejects.toThrow(
         "API Request Failed: Invalid currency pair"
       );
+    });
+  });
+
+  describe("transfer", () => {
+    let pay100: Pay100;
+
+    beforeEach(() => {
+      pay100 = new Pay100({
+        publicKey: "test_public_key",
+        secretKey: "test_secret_key",
+      });
+      jest.clearAllMocks();
+
+      // Mock Date.now() to return a consistent timestamp for testing
+      jest.spyOn(Date, "now").mockReturnValue(1234567890000);
+    });
+
+    describe("executeTransfer", () => {
+      it("should execute a transfer successfully", async () => {
+        const mockResponse = {
+          status: "success",
+          data: {
+            id: "tr_12345",
+            amount: "100.00",
+            fee: "2.50",
+            symbol: "USDT",
+            network: "bsc",
+            reference: "ref_12345",
+            createdAt: "2025-04-29T12:00:00Z",
+            status: "completed",
+            senderAccount: "wallet_sender_123",
+            receiverAccount: "wallet_receiver_456",
+          },
+        };
+
+        (
+          axios as unknown as jest.MockedFunction<typeof axios>
+        ).mockResolvedValueOnce({
+          data: mockResponse,
+        });
+
+        const transferData: ITransferAssetData = {
+          amount: 100,
+          symbol: "USDT",
+          network: "bsc",
+          to: "wallet_sender_123",
+          receiverAccount: "wallet_receiver_456",
+          reference: "ref_12345",
+          transactionPin: "123456",
+          appId: "app123",
+        };
+
+        const result = await pay100.transfer.executeTransfer(transferData);
+        expect(result).toEqual(mockResponse);
+        expect(axios).toHaveBeenCalledWith({
+          method: "POST",
+          url: "https://api.100pay.co/api/v1/transfer/asset",
+          headers: {
+            "api-key": config.publicKey,
+            "x-secret-key": config.secretKey,
+            "x-timestamp": "1234567890000",
+            "x-signature": "mocked_signature",
+            "Content-Type": "application/json",
+          },
+          data: transferData,
+          params: undefined,
+        });
+      });
+
+      it("should handle insufficient funds error during transfer", async () => {
+        const errorResponse = new Error(
+          "API Request Failed: Insufficient funds"
+        ) as Error & {
+          response: {
+            data: {
+              message: string;
+            };
+            status: number;
+          };
+          isAxiosError: boolean;
+        };
+
+        errorResponse.response = {
+          data: {
+            message: "Insufficient funds",
+          },
+          status: 400,
+        };
+        errorResponse.isAxiosError = true;
+
+        (
+          axios as unknown as jest.MockedFunction<typeof axios>
+        ).mockRejectedValueOnce(errorResponse);
+
+        const transferData: ITransferAssetData = {
+          amount: 10000,
+          symbol: "USDT",
+          network: "bsc",
+          to: "wallet_receiver_456",
+          reference: "ref_12345",
+          transactionPin: "123456",
+          appId: "app123",
+        };
+
+        await expect(
+          pay100.transfer.executeTransfer(transferData)
+        ).rejects.toThrow("API Request Failed: Insufficient funds");
+      });
+
+      it("should handle invalid account error during transfer", async () => {
+        const errorResponse = new Error(
+          "API Request Failed: Invalid receiver account"
+        ) as Error & {
+          response: {
+            data: {
+              message: string;
+            };
+            status: number;
+          };
+          isAxiosError: boolean;
+        };
+
+        errorResponse.response = {
+          data: {
+            message: "Invalid receiver account",
+          },
+          status: 400,
+        };
+        errorResponse.isAxiosError = true;
+
+        (
+          axios as unknown as jest.MockedFunction<typeof axios>
+        ).mockRejectedValueOnce(errorResponse);
+
+        const transferData: ITransferAssetData = {
+          amount: 100,
+          symbol: "USDT",
+          network: "bsc",
+          to: "invalid_account",
+          reference: "ref_12345",
+          transactionPin: "123456",
+          appId: "app123",
+        };
+
+        await expect(
+          pay100.transfer.executeTransfer(transferData)
+        ).rejects.toThrow("API Request Failed: Invalid receiver account");
+      });
+    });
+
+    describe("getHistory", () => {
+      it("should retrieve transfer history successfully", async () => {
+        const mockResponse = {
+          status: "success",
+          data: {
+            transfers: [
+              {
+                id: "tr_12345",
+                amount: "100.00",
+                fee: "2.50",
+                symbol: "USDT",
+                network: "bsc",
+                reference: "ref_12345",
+                createdAt: "2025-04-29T12:00:00Z",
+                status: "completed",
+                senderAccount: "wallet_sender_123",
+                receiverAccount: "wallet_receiver_456",
+              },
+              {
+                id: "tr_12346",
+                amount: "50.00",
+                fee: "1.25",
+                symbol: "BTC",
+                network: "btc",
+                reference: "ref_12346",
+                createdAt: "2025-04-28T10:00:00Z",
+                status: "completed",
+                senderAccount: "wallet_sender_123",
+                receiverAccount: "wallet_receiver_789",
+              },
+            ],
+            pagination: {
+              currentPage: 1,
+              totalPages: 5,
+              totalRecords: 100,
+              limit: 20,
+            },
+          },
+        };
+
+        (
+          axios as unknown as jest.MockedFunction<typeof axios>
+        ).mockResolvedValueOnce({
+          data: mockResponse,
+        });
+
+        const historyParams: ITransferHistoryParams = {
+          appId: "app123",
+          page: 1,
+          limit: 20,
+          startDate: "2025-01-01",
+          endDate: "2025-04-29",
+          status: "completed",
+          symbol: "USDT",
+        };
+
+        const result = await pay100.transfer.getHistory(historyParams);
+        expect(result).toEqual(mockResponse);
+        expect(axios).toHaveBeenCalledWith({
+          method: "GET",
+          url: "https://api.100pay.co/api/v1/transfer/history",
+          headers: {
+            "api-key": config.publicKey,
+            "x-secret-key": config.secretKey,
+            "x-timestamp": "1234567890000",
+            "x-signature": "mocked_signature",
+            "Content-Type": "application/json",
+          },
+          data: undefined,
+          params: historyParams,
+        });
+      });
+
+      it("should handle validation error when retrieving transfer history", async () => {
+        const errorResponse = new Error(
+          "API Request Failed: Invalid date range"
+        ) as Error & {
+          response: {
+            data: {
+              message: string;
+            };
+            status: number;
+          };
+          isAxiosError: boolean;
+        };
+
+        errorResponse.response = {
+          data: {
+            message: "Invalid date range",
+          },
+          status: 400,
+        };
+        errorResponse.isAxiosError = true;
+
+        (
+          axios as unknown as jest.MockedFunction<typeof axios>
+        ).mockRejectedValueOnce(errorResponse);
+
+        const historyParams: ITransferHistoryParams = {
+          appId: "app123",
+          page: 1,
+          limit: 20,
+          startDate: "2025-05-01", // Future date
+          endDate: "2025-04-29", // Past date (invalid range)
+        };
+
+        await expect(pay100.transfer.getHistory(historyParams)).rejects.toThrow(
+          "API Request Failed: Invalid date range"
+        );
+      });
+    });
+
+    describe("calculateFee", () => {
+      it("should calculate transfer fee successfully", async () => {
+        const mockResponse = {
+          status: "success",
+          data: {
+            symbol: "USDT",
+            network: "bsc",
+            feeAmount: "2.50",
+            feePercentage: "2.5%",
+            minFee: "1.00",
+            maxFee: "100.00",
+          },
+        };
+
+        (
+          axios as unknown as jest.MockedFunction<typeof axios>
+        ).mockResolvedValueOnce({
+          data: mockResponse,
+        });
+
+        const feeParams: ITransferFeeParams = {
+          symbol: "USDT",
+          network: "bsc",
+          type: "internal",
+        };
+
+        const result = await pay100.transfer.calculateFee(feeParams);
+        expect(result).toEqual(mockResponse);
+        expect(axios).toHaveBeenCalledWith({
+          method: "GET",
+          url: "https://api.100pay.co/api/v1/transfer/fee",
+          headers: {
+            "api-key": config.publicKey,
+            "x-secret-key": config.secretKey,
+            "x-timestamp": "1234567890000",
+            "x-signature": "mocked_signature",
+            "Content-Type": "application/json",
+          },
+          data: undefined,
+          params: feeParams,
+        });
+      });
+
+      it("should handle unsupported currency error when calculating fee", async () => {
+        const errorResponse = new Error(
+          "API Request Failed: Unsupported currency"
+        ) as Error & {
+          response: {
+            data: {
+              message: string;
+            };
+            status: number;
+          };
+          isAxiosError: boolean;
+        };
+
+        errorResponse.response = {
+          data: {
+            message: "Unsupported currency",
+          },
+          status: 400,
+        };
+        errorResponse.isAxiosError = true;
+
+        (
+          axios as unknown as jest.MockedFunction<typeof axios>
+        ).mockRejectedValueOnce(errorResponse);
+
+        const feeParams: ITransferFeeParams = {
+          symbol: "UNKNOWN",
+          network: "bsc",
+          type: "internal",
+        };
+
+        await expect(pay100.transfer.calculateFee(feeParams)).rejects.toThrow(
+          "API Request Failed: Unsupported currency"
+        );
+      });
+
+      it("should handle unsupported transfer type when calculating fee", async () => {
+        const errorResponse = new Error(
+          "API Request Failed: Invalid transfer type"
+        ) as Error & {
+          response: {
+            data: {
+              message: string;
+            };
+            status: number;
+          };
+          isAxiosError: boolean;
+        };
+
+        errorResponse.response = {
+          data: {
+            message: "Invalid transfer type",
+          },
+          status: 400,
+        };
+        errorResponse.isAxiosError = true;
+
+        (
+          axios as unknown as jest.MockedFunction<typeof axios>
+        ).mockRejectedValueOnce(errorResponse);
+
+        const feeParams: ITransferFeeParams = {
+          symbol: "USDT",
+          network: "bsc",
+          type: "invalid",
+        };
+
+        await expect(pay100.transfer.calculateFee(feeParams)).rejects.toThrow(
+          "API Request Failed: Invalid transfer type"
+        );
+      });
     });
   });
 });
