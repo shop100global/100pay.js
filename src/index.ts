@@ -6,7 +6,11 @@ import {
   CreateSubAccountData,
   CreateSubAccountResponse,
 } from "./types/subAccount";
-import { CurrencyConversionPayload, CurrencyConversionResult } from "./types";
+import {
+  CurrencyConversionPayload,
+  CurrencyConversionResult,
+  ISupportedWalletResponse,
+} from "./types";
 import {
   ITransferAssetData,
   ITransferAssetResponse,
@@ -348,6 +352,25 @@ export class Pay100 {
         "GET",
         "/api/v1/transfer/fee",
         params
+      );
+    },
+  };
+
+  /**
+   * Namespace for wallet operations
+   * Provides methods to retrieve supported wallets
+   */
+  wallet = {
+    /**
+     * Get a list of supported wallets and their details
+     *
+     * @returns Promise resolving to an array of supported wallet configurations
+     * @throws Error if the request fails or authentication is invalid
+     */
+    getSupportedWallets: async (): Promise<ISupportedWalletResponse> => {
+      return this.request<ISupportedWalletResponse>(
+        "GET",
+        "/api/v1/wallet/supported"
       );
     },
   };
