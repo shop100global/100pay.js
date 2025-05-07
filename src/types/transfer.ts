@@ -1,6 +1,7 @@
 // src/types/transfer.ts
 
 export interface IWalletTransaction {
+  _id: string;
   accountId: string;
   subAccountId: string;
   appId: string;
@@ -63,7 +64,7 @@ export interface ITransferHistoryParams extends Record<string, unknown> {
   /** Optional account address to filter transfers */
   addresses?: string[];
   /** Optional currency symbol to filter transfers */
-  symbol?: string;
+  symbols?: string[];
   /** Page number for pagination */
   page?: number;
   /** Number of records per page */
@@ -100,6 +101,10 @@ export interface ITransferHistoryResponse {
     limit: number;
     /** Total number of pages */
     pages: number;
+    /** Has next page */
+    hasNextPage: boolean;
+    /** Has previous page */
+    hasPreviousPage: boolean;
   };
 }
 
