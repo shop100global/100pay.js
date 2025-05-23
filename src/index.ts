@@ -10,6 +10,7 @@ import {
   CurrencyConversionPayload,
   CurrencyConversionResult,
   ISupportedWalletResponse,
+  IVerifyResponse,
 } from "./types";
 import {
   ITransferAssetData,
@@ -37,7 +38,7 @@ interface IPay100Config {
  * Interface representing transaction data returned from payment verification
  * Flexible structure to accommodate various transaction types and properties
  */
-interface ITransactionData {
+export interface ITransactionData {
   [key: string]: unknown;
 }
 
@@ -50,18 +51,6 @@ interface IRawApiResponse {
   message?: string;
   data?: unknown;
   [key: string]: unknown;
-}
-
-/**
- * Standardized response interface for transaction verification
- * @property status - Result status ('success' or 'error')
- * @property data - Transaction details when successful, empty object on failure
- * @property message - Optional response message, typically present on errors
- */
-interface IVerifyResponse {
-  status: "success" | "error";
-  data: ITransactionData | Record<string, never>;
-  message?: string;
 }
 
 // Default API endpoint if not otherwise specified
