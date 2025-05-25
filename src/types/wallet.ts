@@ -1,4 +1,4 @@
-import { ITransactionData } from "..";
+// import { ITransactionData } from "..";
 
 export type Network =
   | "bsc"
@@ -146,6 +146,6 @@ export interface IChargeData {
  */
 export interface IVerifyResponse {
   status: "success" | "error";
-  data: IChargeData;
+  data?: IChargeData | null;
   message?: string;
 }

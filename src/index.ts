@@ -180,7 +180,7 @@ export class Pay100 {
       if (!response.data) {
         return {
           status: "error",
-          data: {},
+          data: null,
           message:
             "Something went wrong, be sure you supplied a valid payment id.",
         };
@@ -191,7 +191,7 @@ export class Pay100 {
         if (response.data === "Access Denied, Invalid KEY supplied") {
           return {
             status: "error",
-            data: {},
+            data: null,
             message: "Access Denied, Invalid KEY supplied",
           };
         }
@@ -199,7 +199,7 @@ export class Pay100 {
         if (response.data === "invalid payment id supplied") {
           return {
             status: "error",
-            data: {},
+            data: null,
           };
         }
       }
@@ -208,10 +208,10 @@ export class Pay100 {
       const responseData = response.data;
 
       // Ensure the response data is an object that can be safely cast to ITransactionData
-      const transactionData: ITransactionData =
+      const transactionData: IVerifyResponse["data"] =
         responseData && typeof responseData === "object"
-          ? (responseData as ITransactionData)
-          : {};
+          ? (responseData as unknown as IVerifyResponse["data"])
+          : null;
 
       // Return successful response with properly typed data
       return {
