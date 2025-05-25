@@ -146,6 +146,6 @@ export interface IChargeData {
  */
 export interface IVerifyResponse {
   status: "success" | "error";
-  data: ITransactionData | Record<string, never> | IChargeData;
+  data: IChargeData;
   message?: string;
 }
