@@ -103,7 +103,7 @@ describe("Pay100", () => {
 
       expect(result).toEqual({
         status: "error",
-        data: {},
+        data: null,
         message:
           "Something went wrong, be sure you supplied a valid payment id.",
       });
@@ -120,7 +120,7 @@ describe("Pay100", () => {
 
       expect(result).toEqual({
         status: "error",
-        data: {},
+        data: null,
         message: "Access Denied, Invalid KEY supplied",
       });
     });
@@ -136,7 +136,7 @@ describe("Pay100", () => {
 
       expect(result).toEqual({
         status: "error",
-        data: {},
+        data: null,
       });
     });
 

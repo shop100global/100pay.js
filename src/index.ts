@@ -53,6 +53,18 @@ interface IRawApiResponse {
   [key: string]: unknown;
 }
 
+// /**
+//  * Standardized response interface for transaction verification
+//  * @property status - Result status ('success' or 'error')
+//  * @property data - Transaction details when successful, empty object on failure
+//  * @property message - Optional response message, typically present on errors
+//  */
+// interface IVerifyResponse {
+//   status: "success" | "error";
+//   data: ITransactionData | Record<string, never>;
+//   message?: string;
+// }
+
 // Default API endpoint if not otherwise specified
 const BASE_URL = process.env.BASE_URL || "https://api.100pay.co";
 

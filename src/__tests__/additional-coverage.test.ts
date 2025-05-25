@@ -78,7 +78,7 @@ describe("Pay100 Additional Coverage Tests", () => {
 
       const testResult = await standardPay100.verify("transaction_id");
       expect(testResult.status).toBe("success");
-      expect(testResult.data).toEqual({});
+      expect(testResult.data).toEqual(null);
     });
 
     it("should handle success: false in API response", async () => {

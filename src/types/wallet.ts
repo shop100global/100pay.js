@@ -138,6 +138,8 @@ export interface IChargeData {
   __v: number;
 }
 
+type DataType = IChargeData & Record<string, unknown>;
+
 /**
  * Standardized response interface for transaction verification
  * @property status - Result status ('success' or 'error')
@@ -146,6 +148,6 @@ export interface IChargeData {
  */
 export interface IVerifyResponse {
   status: "success" | "error";
-  data?: IChargeData | null;
+  data?: DataType | null;
   message?: string;
 }
