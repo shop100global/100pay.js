@@ -42,6 +42,102 @@ export interface ISupportedWalletResponse {
   data: ISupportedWallet[];
 }
 
+export interface IChargeData {
+  retries: number;
+  acknowledged: boolean;
+  dispatched: boolean;
+  type: string;
+  _id: string;
+  chargeId: string;
+  reference: string;
+  data: {
+    from: string;
+    to: string;
+    network: string;
+    transaction_id: string;
+    status: string;
+    timestamp: string;
+    value: {
+      local: {
+        amount: string;
+        currency: string;
+      };
+      crypto: {
+        amount: number;
+        currency: string;
+      };
+    };
+    block: {
+      height: number;
+      hash: string;
+    };
+    charge: {
+      customer: {
+        user_id: string;
+        name: string;
+        email: string;
+        phone: string;
+      };
+      billing: {
+        currency: string;
+        vat: number;
+        pricing_type: string;
+        amount: string;
+        description: string;
+      };
+      status: {
+        context: {
+          status: string;
+          value: number;
+        };
+        value: string;
+        total_paid: number;
+      };
+      ref_id: string;
+      payments: Array<{
+        from: string;
+        to: string;
+        network: string;
+        transaction_id: string;
+        status: string;
+        timestamp: string;
+        value: {
+          local: {
+            amount: string;
+            currency: string;
+          };
+          crypto: {
+            amount: number;
+            currency: string;
+          };
+        };
+        block: {
+          height: number;
+          hash: string;
+        };
+      }>;
+      charge_source: string;
+      createdAt: string;
+      _id: string;
+      metadata: {
+        is_approved: string;
+        enrollment_id: string;
+        skill_id: string;
+        user_id: string;
+      };
+      call_back_url: string;
+      app_id: string;
+      userId: string;
+      chargeId: string;
+      __v: number;
+    };
+    appId: string;
+  };
+  cryptoChargeId: string;
+  createdAt: string;
+  __v: number;
+}
+
 /**
  * Standardized response interface for transaction verification
  * @property status - Result status ('success' or 'error')
@@ -50,6 +146,6 @@ export interface ISupportedWalletResponse {
  */
 export interface IVerifyResponse {
   status: "success" | "error";
-  data: ITransactionData | Record<string, never>;
+  data: ITransactionData | Record<string, never> | IChargeData;
   message?: string;
 }
