@@ -138,6 +138,69 @@ export interface IChargeData {
   __v: number;
 }
 
+export interface IBank {
+  name?: string;
+  alias?: string[];
+  routingKey?: string;
+  logoImage?: string | null;
+  bankCode?: string;
+  categoryId?: string;
+  nubanCode?: string | null;
+}
+
+export interface IBankListResponse {
+  statusCode: number;
+  message: string;
+  data: {
+    banks: IBank[];
+    count: number;
+  };
+}
+
+export interface IVerifyBankData extends Record<string, unknown> {
+  bankCode: string;
+  accountNumber: string;
+}
+
+export interface IVerifyBankResponse {
+  statusCode: number;
+  message: string;
+  data: {
+    accountName: string;
+    accountNumber: string;
+    bankCode: string;
+    bankName: string;
+    verified: boolean;
+  };
+}
+
+export interface IBankTransferData extends Record<string, unknown> {
+  beneficiaryBankCode: string;
+  beneficiaryAccountNumber: string;
+  beneficiaryAccountName: string;
+  amount: number;
+  narration: string;
+  paymentReference: string;
+  saveBeneficiary: boolean;
+}
+
+export interface IBankTransferResponse {
+  statusCode: number;
+  message: string;
+  data: {
+    transfer: {
+      sessionId: string;
+      status: string;
+      amount: number;
+      beneficiaryAccountNumber: string;
+      beneficiaryBankCode: string;
+      paymentReference: string;
+      narration: string;
+      createdAt: string;
+    };
+  };
+}
+
 type DataType = IChargeData & Record<string, unknown>;
 
 /**

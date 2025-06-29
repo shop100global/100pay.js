@@ -9,7 +9,12 @@ import {
 import {
   CurrencyConversionPayload,
   CurrencyConversionResult,
+  IBankListResponse,
+  IBankTransferData,
+  IBankTransferResponse,
   ISupportedWalletResponse,
+  IVerifyBankData,
+  IVerifyBankResponse,
   IVerifyResponse,
 } from "./types";
 import {
@@ -372,6 +377,54 @@ export class Pay100 {
       return this.request<ISupportedWalletResponse>(
         "GET",
         "/api/v1/wallet/supported"
+      );
+    },
+  };
+
+  /**
+   * Namespace for bank transfer operations
+   * Provides methods to transfer to external bank accounts
+   */
+  bankTransfer = {
+    /**
+     * Get Bank List
+     * @returns Promise resolving to an array of supported banks
+     * @throws Error if the request fails or authentication is invalid
+     */
+    getBankList: async (): Promise<IBankListResponse> => {
+      return this.request<IBankListResponse>(
+        "GET",
+        "/api/v1/bank-transfers/banks"
+      );
+    },
+
+    /**
+     * Verify Bank
+     * @param data - Bank details
+     * @returns Promise resolving to bank details
+     * @throws Error if the request fails or authentication is invalid
+     */
+    verifyBank: async (data: IVerifyBankData): Promise<IVerifyBankResponse> => {
+      return this.request<IVerifyBankResponse>(
+        "POST",
+        "/api/v1/bank-transfers/verify-account",
+        data
+      );
+    },
+
+    /**
+     * Perform a bank transfer
+     * @param data - Bank transfer details
+     * @returns Promise resolving to bank transfer details
+     * @throws Error if the request fails or authentication is invalid
+     */
+    transfer: async (
+      data: IBankTransferData
+    ): Promise<IBankTransferResponse> => {
+      return this.request<IBankTransferResponse>(
+        "POST",
+        "/api/v1/bank-transfers",
+        data
       );
     },
   };

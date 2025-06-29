@@ -1,12 +1,15 @@
 # 100Pay SDK
 
-A TypeScript library for integrating with the 100Pay payment platform, enabling developers to easily accept cryptocurrency payments and manage transactions.
+A TypeScript library for integrating with the 100Pay payment platform, enabling developers to easily accept cryptocurrency payments, manage transactions, and perform bank transfers.
 
 ## Features
 
 - ✅ Verify cryptocurrency payments
 - ✅ Create and manage subaccounts
 - ✅ Preview currency conversions
+- ✅ Transfer assets between wallets
+- ✅ Get supported wallets
+- ✅ Bank transfers with account verification
 - ✅ Make authenticated API requests
 - ✅ Full TypeScript support with comprehensive typing
 - ✅ Secure server-to-server communication with request signing
@@ -297,6 +300,189 @@ try {
 }
 ```
 
+### Asset Transfers
+
+Transfer assets between wallets and manage transfer operations:
+
+```typescript
+// Execute an asset transfer
+const transfer = await client.transfer.executeTransfer({
+  amount: 100,
+  currency: "USDT",
+  recipientAddress: "0x1234567890abcdef...",
+  // ... other transfer parameters
+});
+
+// Get transfer history
+const history = await client.transfer.getHistory({
+  page: 1,
+  limit: 10
+});
+
+// Calculate transfer fees
+const fees = await client.transfer.calculateFee({
+  currency: "USDT",
+  transferType: "crypto"
+});
+```
+
+### Wallet Operations
+
+Get information about supported wallets:
+
+```typescript
+// Get supported wallets
+const wallets = await client.wallet.getSupportedWallets();
+console.log(`Supported wallets:`, wallets);
+```
+
+### Bank Transfers
+
+The SDK now supports bank transfer operations including getting bank lists, verifying accounts, and executing transfers:
+
+```typescript
+// Get list of supported banks
+const bankList = await client.bankTransfer.getBankList();
+console.log(`${bankList.data.count} banks available`);
+
+// Verify a bank account
+const verification = await client.bankTransfer.verifyBank({
+  bankCode: "044",
+  accountNumber: "1234567890"
+});
+
+if (verification.data.verified) {
+  console.log(`Account verified: ${verification.data.accountName}`);
+  
+  // Execute bank transfer
+  const transfer = await client.bankTransfer.transfer({
+    beneficiaryBankCode: "044",
+    beneficiaryAccountNumber: "1234567890",
+    beneficiaryAccountName: "John Doe",
+    amount: 500, // Amount in Naira (NGN 500)
+    narration: "Payment for services",
+    paymentReference: `ref_${Date.now()}`,
+    saveBeneficiary: true
+  });
+  
+  console.log(`Transfer initiated: ${transfer.data.transfer.sessionId}`);
+}
+```
+
+**Bank Transfer Methods:**
+
+#### Get Bank List
+
+```typescript
+const banks = await client.bankTransfer.getBankList();
+```
+
+**Returns:**
+
+```typescript
+interface IBankListResponse {
+  statusCode: number;
+  message: string;
+  data: {
+    banks: IBank[];
+    count: number;
+  };
+}
+
+interface IBank {
+  name?: string;
+  alias?: string[];
+  routingKey?: string;
+  logoImage?: string | null;
+  bankCode?: string;
+  categoryId?: string;
+  nubanCode?: string | null;
+}
+```
+
+#### Verify Bank Account
+
+```typescript
+const verification = await client.bankTransfer.verifyBank({
+  bankCode: "044",
+  accountNumber: "1234567890"
+});
+```
+
+**Parameters:**
+
+```typescript
+interface IVerifyBankData {
+  bankCode: string;      // Bank code from the bank list
+  accountNumber: string; // Account number to verify
+}
+```
+
+**Returns:**
+
+```typescript
+interface IVerifyBankResponse {
+  statusCode: number;
+  message: string;
+  data: {
+    accountName: string;
+    accountNumber: string;
+    bankCode: string;
+    bankName: string;
+    verified: boolean;
+  };
+}
+```
+
+#### Execute Bank Transfer
+
+```typescript
+const transfer = await client.bankTransfer.transfer({
+  beneficiaryBankCode: "044",
+  beneficiaryAccountNumber: "1234567890",
+  beneficiaryAccountName: "John Doe",
+  amount: 50000,
+  narration: "Payment description",
+  paymentReference: "unique_ref_123",
+  saveBeneficiary: true
+});
+```
+
+**Parameters:**
+
+```typescript
+interface IBankTransferData {
+  beneficiaryBankCode: string;      // Recipient's bank code
+  beneficiaryAccountNumber: string; // Recipient's account number
+  beneficiaryAccountName: string;   // Recipient's account name
+  amount: number;                   // Amount in Naira
+  narration: string;                // Transfer description
+  paymentReference: string;         // Unique payment reference
+  saveBeneficiary: boolean;         // Whether to save this beneficiary
+}
+```
+
+**Returns:**
+
+```typescript
+interface IBankTransferResponse {
+  statusCode: number;
+  message: string;
+  data: {
+    transfer: {
+      sessionId: string;
+      status: string;
+      amount: number;
+      beneficiaryAccountNumber: string;
+      beneficiaryBankCode: string;
+      paymentReference: string;
+      narration: string;
+      createdAt: string;
+    };
+  };
+}
+```
+
 ### Generic API Requests
 
 The SDK provides a generic `request` method for making any API call to the 100Pay API:
@@ -360,7 +546,12 @@ import {
   CurrencyConversionPayload,
   CurrencyConversionResult,
   Account,
-  AccountDetails
+  AccountDetails,
+  IBankListResponse,
+  IBankTransferData,
+  IBankTransferResponse,
+  IVerifyBankData,
+  IVerifyBankResponse
 } from '@100pay-hq/100pay.js';
 ```
 
@@ -409,6 +600,53 @@ const preview = await client.conversion.preview({
 console.log(`You will receive approximately ${preview.convertedAmount} BTC`);
 console.log(`Exchange rate: 1 USDT = ${preview.toRate / preview.fromRate} BTC`);
 console.log(`Fee: ${preview.feeInfromSymbol} USDT (${preview.feeInUSD} USD)`);
+```
+
+### Bank Transfer Workflow
+
+```typescript
+// Complete bank transfer workflow
+async function performBankTransfer() {
+  try {
+    // 1. Get available banks
+    const banks = await client.bankTransfer.getBankList();
+    console.log(`Available banks: ${banks.data.count}`);
+    
+    // 2. Find the desired bank
+    const targetBank = banks.data.banks.find(bank => bank.name?.includes("Access"));
+    if (!targetBank) throw new Error("Bank not found");
+    
+    // 3. Verify the recipient's account
+    const verification = await client.bankTransfer.verifyBank({
+      bankCode: targetBank.bankCode!,
+      accountNumber: "1234567890"
+    });
+    
+    if (!verification.data.verified) {
+      throw new Error("Account verification failed");
+    }
+    
+    console.log(`Account verified: ${verification.data.accountName}`);
+    
+    // 4. Execute the transfer
+    const transfer = await client.bankTransfer.transfer({
+      beneficiaryBankCode: targetBank.bankCode!,
+      beneficiaryAccountNumber: "1234567890",
+      beneficiaryAccountName: verification.data.accountName,
+      amount: 500, // NGN 500 in Naira
+      narration: "Payment for services rendered",
+      paymentReference: `PAY_${Date.now()}`,
+      saveBeneficiary: true
+    });
+    
+    console.log(`Transfer successful: ${transfer.data.transfer.sessionId}`);
+    return transfer.data.transfer;
+    
+  } catch (error) {
+    console.error(`Bank transfer failed: ${error.message}`);
+    throw error;
+  }
+}
 ```
 
 ## Resources
