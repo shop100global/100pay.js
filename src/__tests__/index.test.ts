@@ -1,3 +1,5 @@
+// ./src/__tests__/index.test.ts
+
 import axios from "axios";
 import crypto from "crypto";
 import {
@@ -16,6 +18,12 @@ jest.mock("crypto", () => ({
     update: jest.fn().mockReturnThis(),
     digest: jest.fn().mockReturnValue("mocked_signature"),
   }),
+}));
+// Mock logger to avoid console output during tests
+jest.mock("@untools/logger", () => ({
+  logger: {
+    error: jest.fn(),
+  },
 }));
 
 describe("Pay100", () => {
