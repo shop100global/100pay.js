@@ -12,44 +12,51 @@ type CurrencyConversionPayload = Record<string, unknown> & {
 };
 
 type EnhancedConversionResponse = {
-  conversion: {
-    fromSymbol: string;
-    toSymbol: string;
-    requestedAmount: number;
-    convertedAmount: number;
-    feeInFromCurrency: number;
-    feeInToCurrency: number;
-    totalDebitAmount: number;
-    totalAmount: number;
-    finalAmount: number;
-    feeInUSD: number;
-    conversionFeeInUSD: number;
-    conversionFeeInToCurrency: number;
-    conversionFeeInFromCurrency: number;
-    fromRate: number;
-    toRate: number;
-    intermediateUSDAmount: number;
-    percentageConversionFee: number;
+  conversion: CurrencyConversionResult;
+  adjustedConversion: {
+    wasAdjusted: boolean;
+    adjustedAmount: number;
+    adjustedConvertedAmount: number;
+    adjustedTotalCost: number;
+    adjustedFeeInFromCurrency: number;
+    adjustedFeeInToCurrency: number;
+    reasonForAdjustment: string;
+  };
+  maximumConversion: {
+    maxConvertibleAmount: number;
+    maxConvertedAmount: number;
+    maxTotalCost: number;
+    maxFeeInFromCurrency: number;
+    maxFeeInToCurrency: number;
+    remainingBalance: number;
+    canConvertEntireBalance: boolean;
   };
   balance: {
     currentBalance: number;
     availableBalance: number;
     hasSufficientBalance: boolean;
     shortfall: number;
+    balanceAfterConversion: number;
   };
   wallets: {
     fromWallet: {
       exists: boolean;
       symbol: string;
-      walletType: "crypto" | "local" | string;
+      walletType: "fiat" | "crypto" | string;
     };
     toWallet: {
       exists: boolean;
       symbol: string;
-      walletType: "crypto" | "local" | string;
+      walletType: "fiat" | "crypto" | string;
     };
   };
   canProceed: boolean;
+  recommendations: {
+    useAdjustedAmount: boolean;
+    convertEntireBalance: boolean;
+    suggestedAmount: number;
+    maxPossibleAmount: number;
+  };
   restrictions: {
     isWhitelisted: boolean;
     validationPassed: boolean;
@@ -65,7 +72,7 @@ type EnhancedConversionResponse = {
     canTransact: boolean;
   };
   mode: string;
-  timestamp: string; // ISO string format
+  timestamp: string;
 };
 
 type CurrencyConversionResult = {

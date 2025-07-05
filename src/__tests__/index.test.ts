@@ -461,8 +461,8 @@ describe("Pay100", () => {
 
       const conversionData: CurrencyConversionPayload = {
         amount: 100,
-        fromSymbol: "USDT",
-        toSymbol: "USD",
+        from_symbol: "USDT",
+        to_symbol: "USD",
         appId: "app123",
       };
 
