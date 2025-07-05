@@ -297,10 +297,10 @@ export class Pay100 {
         CurrencyConversionResult | EnhancedConversionResponse
       >("POST", "/api/v1/user/preview-convert-asset", {
         ...data,
-        ...((data as unknown as { fromSymbol: string }).fromSymbol && {
+        ...(data.fromSymbol && {
           from_symbol: data.fromSymbol,
         }),
-        ...((data as unknown as { toSymbol: string }).toSymbol && {
+        ...(data.toSymbol && {
           to_symbol: data.toSymbol,
         }),
       });

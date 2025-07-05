@@ -1,10 +1,14 @@
 /* eslint-disable @typescript-eslint/no-redundant-type-constituents */
 type CurrencyConversionPayload = Record<string, unknown> & {
   amount: number;
-  from_symbol: string;
-  to_symbol: string;
+  from_symbol?: string;
+  to_symbol?: string;
   appId?: string;
   mode?: string;
+
+  // for backwards compatibility
+  fromSymbol?: string;
+  toSymbol?: string;
 };
 
 type EnhancedConversionResponse = {
