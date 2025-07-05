@@ -117,11 +117,13 @@ try {
 
 Subaccounts allow you to create and manage separate accounts under your main account.
 
+> **Note:** The `networks` array should contain lowercase network names (e.g., `"ethereum"`, `"bsc"`).
+
 ```typescript
 // Create a subaccount
 const subaccount = await client.subaccounts.create({
   symbols: ["BTC", "ETH", "USDT"],
-  networks: ["ETHEREUM", "BSC"],
+  networks: ["ethereum", "bsc"],
   owner: {
     name: "Partner Store",
     email: "partner@example.com",
@@ -246,8 +248,8 @@ Preview currency conversion rates and fees:
 // Preview a currency conversion
 const conversion = await client.conversion.preview({
   amount: 100,
-  fromSymbol: "BTC",
-  toSymbol: "USDT",
+  from_symbol: "BTC",
+  to_symbol: "USDT",
   appId: "your_app_id" // Optional
 });
 ```
@@ -257,28 +259,37 @@ const conversion = await client.conversion.preview({
 ```typescript
 interface CurrencyConversionPayload {
   amount: number;      // Amount to convert
-  fromSymbol: string;  // Source currency symbol
-  toSymbol: string;    // Target currency symbol
+  from_symbol: string; // Source currency symbol (snake_case)
+  to_symbol: string;   // Target currency symbol (snake_case)
   appId?: string;      // Optional application ID
+  mode?: string;       // Optional conversion mode
 }
 ```
 
 **Returns:**
 
+The preview may return a simple result or an enhanced response with more details:
+
 ```typescript
+// Simple result
 interface CurrencyConversionResult {
   convertedAmount: number;              // Final amount after conversion
   totalAmount: number;                  // Total amount including fees
+  finalAmount: number;                  // Final amount after all deductions
   feeInUSD: number;                     // Fee amount in USD
   feeInToCurrency: number;              // Fee amount in target currency
-  feeInfromSymbol: number;              // Fee amount in source currency
+  feeInFromCurrency: number;            // Fee amount in source currency
   conversionFeeInUSD: number;           // Conversion fee in USD
   conversionFeeInToCurrency: number;    // Conversion fee in target currency
-  conversionFeeInfromSymbol: number;    // Conversion fee in source currency
+  conversionFeeInFromCurrency: number;  // Conversion fee in source currency
   fromRate: number;                     // Exchange rate for source currency
   toRate: number;                       // Exchange rate for target currency
   intermediateUSDAmount: number;        // Intermediate amount in USD
+  percentageConversionFee: number;      // Percentage conversion fee
 }
+
+// Enhanced response (see types for full structure)
+type EnhancedConversionResponse = { ... }
 ```
 
 **Example:**
@@ -287,14 +298,18 @@ interface CurrencyConversionResult {
 try {
   const preview = await client.conversion.preview({
     amount: 0.5,
-    fromSymbol: "BTC",
-    toSymbol: "USDT"
+    from_symbol: "BTC",
+    to_symbol: "USDT"
   });
   
-  console.log(`Converting 0.5 BTC to USDT:`);
-  console.log(`You will receive: ${preview.convertedAmount} USDT`);
-  console.log(`Exchange rate: 1 BTC = ${preview.toRate / preview.fromRate} USDT`);
-  console.log(`Total fees: ${preview.feeInUSD} USD (${preview.feeInfromSymbol} BTC)`);
+  if ("convertedAmount" in preview) {
+    console.log(`You will receive: ${preview.convertedAmount} USDT`);
+    console.log(`Exchange rate: 1 BTC = ${preview.toRate / preview.fromRate} USDT`);
+    console.log(`Total fees: ${preview.feeInUSD} USD (${preview.feeInFromCurrency} BTC)`);
+  } else {
+    // Handle enhanced response
+    console.log("Enhanced conversion preview:", preview);
+  }
 } catch (error) {
   console.error(`Conversion preview failed: ${error.message}`);
 }
@@ -568,7 +583,7 @@ import {
 ```typescript
 const subaccount = await client.subaccounts.create({
   symbols: ["BTC", "ETH", "USDT"],
-  networks: ["ETHEREUM"],
+  networks: ["ethereum"],
   owner: {
     name: "Partner Name",
     email: "partner@example.com",
@@ -592,14 +607,19 @@ subaccount.accounts.forEach(account => {
 // Get conversion rates before executing a trade
 const preview = await client.conversion.preview({
   amount: 1000,
-  fromSymbol: "USDT",
-  toSymbol: "BTC"
+  from_symbol: "USDT",
+  to_symbol: "BTC"
 });
 
 // Show user the conversion details
-console.log(`You will receive approximately ${preview.convertedAmount} BTC`);
-console.log(`Exchange rate: 1 USDT = ${preview.toRate / preview.fromRate} BTC`);
-console.log(`Fee: ${preview.feeInfromSymbol} USDT (${preview.feeInUSD} USD)`);
+if ("convertedAmount" in preview) {
+  console.log(`You will receive approximately ${preview.convertedAmount} BTC`);
+  console.log(`Exchange rate: 1 USDT = ${preview.toRate / preview.fromRate} BTC`);
+  console.log(`Fee: ${preview.feeInFromCurrency} USDT (${preview.feeInUSD} USD)`);
+} else {
+  // Handle enhanced response
+  console.log("Enhanced conversion preview:", preview);
+}
 ```
 
 ### Bank Transfer Workflow

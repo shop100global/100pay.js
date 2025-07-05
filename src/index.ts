@@ -9,6 +9,7 @@ import {
 import {
   CurrencyConversionPayload,
   CurrencyConversionResult,
+  EnhancedConversionResponse,
   IBankListResponse,
   IBankTransferData,
   IBankTransferResponse,
@@ -291,12 +292,18 @@ export class Pay100 {
      */
     preview: async (
       data: CurrencyConversionPayload
-    ): Promise<CurrencyConversionResult> => {
-      return this.request<CurrencyConversionResult>(
-        "POST",
-        "/api/v1/user/preview-convert-asset",
-        data
-      );
+    ): Promise<CurrencyConversionResult | EnhancedConversionResponse> => {
+      return this.request<
+        CurrencyConversionResult | EnhancedConversionResponse
+      >("POST", "/api/v1/user/preview-convert-asset", {
+        ...data,
+        ...((data as unknown as { fromSymbol: string }).fromSymbol && {
+          from_symbol: data.fromSymbol,
+        }),
+        ...((data as unknown as { toSymbol: string }).toSymbol && {
+          to_symbol: data.toSymbol,
+        }),
+      });
     },
   };
 
