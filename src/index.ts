@@ -295,12 +295,7 @@ export class Pay100 {
       return this.request<CurrencyConversionResult>(
         "POST",
         "/api/v1/user/preview-convert-asset",
-        {
-          amount: data.amount,
-          to_symbol: data.toSymbol,
-          from_symbol: data.fromSymbol,
-          appId: data.appId,
-        }
+        data
       );
     },
   };
