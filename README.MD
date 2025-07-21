@@ -513,10 +513,10 @@ const response = await client.request<ResponseType>(
 **Example:**
 
 ```typescript
-// Get user balance
+// Get user app balance
 const balance = await client.request<BalanceResponse>(
   'GET',
-  '/api/v1/user/balance'
+  '/api/v1/user-apps/:appId/wallet-balance/:symbol'
 );
 ```
 
