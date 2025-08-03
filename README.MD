@@ -669,6 +669,49 @@ async function performBankTransfer() {
 }
 ```
 
+## Webhook Handling
+
+100Pay sends webhooks for various events. Here's an example bank transfer debit webhook payload:
+
+```typescript
+interface BankTransferWebhook {
+  eventType: "bank_transfer.debit";
+  transactionId: string;
+  reference: string;
+  amount: number;
+  timestamp: string;
+  transaction: {
+    status: "pending" | "completed" | "failed";
+    from: string;
+    to: string;
+    metadata: {
+      paymentReference: string;
+      description: string;
+      fees: number;
+    };
+    // ... other fields
+  };
+  data: {
+    sessionId: string;
+    creditAccountName: string;
+    creditAccountNumber: string;
+    status: "Created" | "Processing" | "Successful" | "Failed";
+    narration: string;
+    fees: number;
+    // ... other fields
+  };
+}
+```
+
+**Webhook Event Types:**
+
+- `bank_transfer.debit` - Outgoing bank transfer initiated
+- `bank_transfer.credit` - Incoming bank transfer received  
+- `wallet.deposit` - Wallet deposit received
+- `wallet.deposit.internal` - Internal wallet deposit received
+
+Always verify webhook signatures and use the SDK's `verify()` method to confirm transaction details.
+
 ## Resources
 
 - [100Pay Platform](https://100pay.co)
