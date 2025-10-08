@@ -2,6 +2,37 @@
 
 A TypeScript library for integrating with the 100Pay payment platform, enabling developers to easily accept cryptocurrency payments, manage transactions, and perform bank transfers.
 
+## Table of Contents
+
+- [Features](#features)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [API Reference](#api-reference)
+  - [Initialization](#initialization)
+  - [Transaction Verification](#transaction-verification)
+  - [Subaccounts](#subaccounts)
+  - [Currency Conversion](#currency-conversion)
+  - [Asset Transfers](#asset-transfers)
+  - [Wallet Operations](#wallet-operations)
+  - [Bank Transfers](#bank-transfers)
+  - [OAuth 2.0 Authorization](#oauth-20-authorization)
+  - [Generic API Requests](#generic-api-requests)
+- [Error Handling](#error-handling)
+- [Security and Authentication](#security-and-authentication)
+- [TypeScript Support](#typescript-support)
+- [Common Use Cases](#common-use-cases)
+  - [Accepting Cryptocurrency Payments](#accepting-cryptocurrency-payments)
+  - [Creating Subaccounts for Partners or Marketplaces](#creating-subaccounts-for-partners-or-marketplaces)
+  - [Currency Conversion Preview](#currency-conversion-preview)
+  - [Bank Transfer Workflow](#bank-transfer-workflow)
+  - [OAuth 2.0 Workflow](#oauth-20-workflow)
+- [Webhook Handling](#webhook-handling)
+- [Resources](#resources)
+- [Development](#development)
+  - [Building from Source](#building-from-source)
+  - [Available Scripts](#available-scripts)
+- [License](#license)
+
 ## Features
 
 - ✅ Verify cryptocurrency payments
@@ -10,6 +41,7 @@ A TypeScript library for integrating with the 100Pay payment platform, enabling 
 - ✅ Transfer assets between wallets
 - ✅ Get supported wallets
 - ✅ Bank transfers with account verification
+- ✅ OAuth 2.0 for secure authorization
 - ✅ Make authenticated API requests
 - ✅ Full TypeScript support with comprehensive typing
 - ✅ Secure server-to-server communication with request signing
@@ -463,6 +495,39 @@ const transfer = await client.bankTransfer.transfer({
 });
 ```
 
+### OAuth 2.0 Authorization
+
+#### Get Authorization URL
+
+```typescript
+const authUrl = client.oauth.getAuthorizationUrl({
+  redirectUri: "https://yourapp.com/callback",
+  scope: "read_user_info read_app_info",
+  state: "some_random_state"
+});
+```
+
+#### Get Access Token
+
+```typescript
+const tokenData = await client.oauth.getAccessToken({
+  code: "authorization_code",
+  redirectUri: "https://yourapp.com/callback"
+});
+```
+
+#### Get User Info
+
+```typescript
+const userInfo = await client.oauth.getUserInfo(tokenData.access_token);
+```
+
+#### Get App Info
+
+```typescript
+const appInfo = await client.oauth.getAppInfo(tokenData.access_token);
+```
+
 **Parameters:**
 
 ```typescript
@@ -496,6 +561,31 @@ interface IBankTransferResponse {
     };
   };
 }
+```
+
+### OAuth 2.0
+
+The SDK provides methods for OAuth 2.0 authorization:
+
+```typescript
+// Get authorization URL
+const authUrl = client.oauth.getAuthorizationUrl({
+  redirectUri: "https://yourapp.com/callback",
+  scope: "read_user_info read_app_info",
+  state: "some_random_state"
+});
+
+// Get access token
+const tokenData = await client.oauth.getAccessToken({
+  code: "authorization_code",
+  redirectUri: "https://yourapp.com/callback"
+});
+
+// Get user info
+const userInfo = await client.oauth.getUserInfo(tokenData.access_token);
+
+// Get app info
+const appInfo = await client.oauth.getAppInfo(tokenData.access_token);
 ```
 
 ### Generic API Requests
@@ -566,7 +656,11 @@ import {
   IBankTransferData,
   IBankTransferResponse,
   IVerifyBankData,
-  IVerifyBankResponse
+  IVerifyBankResponse,
+  IOAuthApp,
+  ITokenData,
+  IUserInfo,
+  IAppInfo
 } from '@100pay-hq/100pay.js';
 ```
 
@@ -664,6 +758,41 @@ async function performBankTransfer() {
     
   } catch (error) {
     console.error(`Bank transfer failed: ${error.message}`);
+    throw error;
+  }
+}
+```
+
+### OAuth 2.0 Workflow
+
+```typescript
+// Complete OAuth 2.0 workflow
+async function performOAuth() {
+  try {
+    // 1. Get authorization URL
+    const authUrl = client.oauth.getAuthorizationUrl({
+      redirectUri: "https://yourapp.com/callback",
+      scope: "read_user_info read_app_info",
+      state: "some_random_state"
+    });
+    console.log(`Authorization URL: ${authUrl}`);
+    
+    // 2. Get access token
+    const tokenData = await client.oauth.getAccessToken({
+      code: "authorization_code",
+      redirectUri: "https://yourapp.com/callback"
+    });
+    
+    // 3. Get user info
+    const userInfo = await client.oauth.getUserInfo(tokenData.access_token);
+    console.log(`User info: ${userInfo}`);
+    
+    // 4. Get app info
+    const appInfo = await client.oauth.getAppInfo(tokenData.access_token);
+    console.log(`App info: ${appInfo}`);
+    
+  } catch (error) {
+    console.error(`OAuth workflow failed: ${error.message}`);
     throw error;
   }
 }
