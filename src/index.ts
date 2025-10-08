@@ -26,6 +26,7 @@ import {
   ITransferFeeParams,
   ITransferFeeResponse,
 } from "./types/transfer";
+import { IAppInfo, IOAuthApp, ITokenData, IUserInfo } from "./types/oauth";
 import { logger } from "@untools/logger";
 
 /**
@@ -432,6 +433,89 @@ export class Pay100 {
   };
 
   /**
+   * Namespace for OAuth 2.0 operations
+   */
+  oauth = {
+    /**
+     * Register a new OAuth application.
+     * @param data - Application details.
+     * @returns Promise resolving to the registered OAuth application details.
+     */
+    registerApp: async (data: {
+      appName: string;
+      appDescription: string;
+      appLogo: string;
+      redirectUris: string[];
+      allowedScopes: string[];
+    }): Promise<IOAuthApp> => {
+      return this.request<IOAuthApp>("POST", "/api/v1/oauth/register", data);
+    },
+
+    /**
+     * Get the authorization URL to redirect the user to.
+     * @param params - Authorization parameters.
+     * @returns Promise resolving to the authorization URL.
+     */
+    getAuthorizationUrl: async (params: {
+      client_id: string;
+      redirect_uri: string;
+      scope?: string;
+      state?: string;
+    }): Promise<string> => {
+      const response = await this.request<{
+        data: { authorizationUrl: string };
+      }>("GET", "/api/v1/oauth/authorize", params);
+      return response.data.authorizationUrl;
+    },
+
+    /**
+     * Exchange authorization code for an access token.
+     * @param data - Code exchange details.
+     * @returns Promise resolving to the token data.
+     */
+    exchangeCodeForToken: async (data: {
+      grant_type: "authorization_code";
+      code: string;
+      client_id: string;
+      client_secret: string;
+      redirect_uri: string;
+    }): Promise<ITokenData> => {
+      return this.request<ITokenData>("POST", "/api/v1/oauth/token", data);
+    },
+
+    /**
+     * Get user information using the access token.
+     * @param accessToken - The access token.
+     * @returns Promise resolving to the user information.
+     */
+    getUserInfo: async (accessToken: string): Promise<IUserInfo> => {
+      return this.request<IUserInfo>("GET", "/api/v1/oauth/userinfo", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+    },
+
+    /**
+     * Get application information using the access token.
+     * @param accessToken - The access token.
+     * @returns Promise resolving to the application information.
+     */
+    getAppInfo: async (accessToken: string): Promise<IAppInfo> => {
+      return this.request<IAppInfo>("GET", "/api/v1/oauth/appinfo", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+    },
+
+    /**
+     * Revoke an access token.
+     * @param token - The access token to revoke.
+     * @returns Promise resolving when the token is revoked.
+     */
+    revokeToken: async (token: string): Promise<void> => {
+      return this.request<void>("POST", "/api/v1/oauth/revoke", { token });
+    },
+  };
+
+  /**
    * Generic method to make authenticated API requests to any endpoint
    *
    * @param method - HTTP method to use (GET, POST, PUT, DELETE)
@@ -578,3 +662,4 @@ export class Pay100 {
 
 export * from "./types";
 export * from "./types/transfer";
+export * from "./types/oauth";
