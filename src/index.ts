@@ -557,7 +557,7 @@ export class Pay100 {
 
       return response.data as T;
     } catch (error) {
-      logger.error(error);
+      // logger.error(error);
       if (axios.isAxiosError(error)) {
         const axiosError = error as AxiosError;
         logger.error(axiosError?.response);
