@@ -29,6 +29,14 @@ import {
 import { IAppInfo, IOAuthApp, ITokenData, IUserInfo } from "./types/oauth";
 import { logger } from "@untools/logger";
 
+export interface IApiResponse<T = unknown> {
+  success: boolean;
+  data: T;
+  message: string;
+  meta?: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
 /**
  * Configuration interface for initializing the Pay100 SDK
  * @property publicKey - API public key required for all API calls
@@ -480,8 +488,12 @@ export class Pay100 {
       client_id: string;
       client_secret: string;
       redirect_uri: string;
-    }): Promise<ITokenData> => {
-      return this.request<ITokenData>("POST", "/api/v1/oauth/token", data);
+    }): Promise<IApiResponse<ITokenData>> => {
+      return this.request<IApiResponse<ITokenData>>(
+        "POST",
+        "/api/v1/oauth/token",
+        data
+      );
     },
 
     /**
@@ -489,10 +501,16 @@ export class Pay100 {
      * @param accessToken - The access token.
      * @returns Promise resolving to the user information.
      */
-    getUserInfo: async (accessToken: string): Promise<IUserInfo> => {
-      return this.request<IUserInfo>("GET", "/api/v1/oauth/userinfo", {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
+    getUserInfo: async (
+      accessToken: string
+    ): Promise<IApiResponse<IUserInfo>> => {
+      return this.request<IApiResponse<IUserInfo>>(
+        "GET",
+        "/api/v1/oauth/userinfo",
+        {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }
+      );
     },
 
     /**
@@ -500,10 +518,16 @@ export class Pay100 {
      * @param accessToken - The access token.
      * @returns Promise resolving to the application information.
      */
-    getAppInfo: async (accessToken: string): Promise<IAppInfo> => {
-      return this.request<IAppInfo>("GET", "/api/v1/oauth/appinfo", {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
+    getAppInfo: async (
+      accessToken: string
+    ): Promise<IApiResponse<IAppInfo>> => {
+      return this.request<IApiResponse<IAppInfo>>(
+        "GET",
+        "/api/v1/oauth/appinfo",
+        {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }
+      );
     },
 
     /**
