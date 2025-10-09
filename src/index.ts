@@ -532,11 +532,12 @@ export class Pay100 {
     try {
       const url = `${this.baseUrl}${endpoint}`;
       const headers = this.getHeaders(data);
+      const otherHeaders = data["headers"] as Record<string, string>;
 
       const response = await axios({
         method,
         url,
-        headers,
+        headers: { ...headers, ...otherHeaders },
         data: method !== "GET" ? data : undefined,
         params: method === "GET" ? data : undefined,
       });
