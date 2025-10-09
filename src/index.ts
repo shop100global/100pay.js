@@ -167,6 +167,7 @@ export class Pay100 {
         "x-timestamp": timestamp,
         "x-signature": signature,
         "Content-Type": "application/json",
+        ...(payload?.headers || {}),
       };
     }
 
@@ -532,12 +533,11 @@ export class Pay100 {
     try {
       const url = `${this.baseUrl}${endpoint}`;
       const headers = this.getHeaders(data);
-      const otherHeaders = data["headers"] as Record<string, string>;
 
       const response = await axios({
         method,
         url,
-        headers: { ...headers, ...otherHeaders },
+        headers,
         data: method !== "GET" ? data : undefined,
         params: method === "GET" ? data : undefined,
       });
@@ -557,7 +557,6 @@ export class Pay100 {
 
       return response.data as T;
     } catch (error) {
-      // logger.error(error);
       if (axios.isAxiosError(error)) {
         const axiosError = error as AxiosError;
         logger.error(axiosError?.response);
