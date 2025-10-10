@@ -1,4 +1,3 @@
-
 export interface IOAuthApp {
   clientId: string;
   clientSecret: string;
@@ -23,6 +22,8 @@ export interface IUserInfo {
   avatar: string;
   email: string;
   isEmailVerified: boolean;
+  phone: string;
+  verified: boolean;
 }
 
 export interface IAppInfo {
