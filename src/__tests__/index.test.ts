@@ -581,12 +581,7 @@ describe("Pay100", () => {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${config.token}`,
           },
-          data: {
-            ...transferData,
-            headers: {
-              Authorization: `Bearer ${config.token}`,
-            },
-          },
+          data: transferData,
           params: undefined,
         });
       });
