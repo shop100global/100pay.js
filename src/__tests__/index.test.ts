@@ -570,6 +570,9 @@ describe("Pay100", () => {
 
         const result = await pay100.transfer.executeTransfer(transferData);
         expect(result).toEqual(mockResponse);
+
+        // oauthAccessToken should NOT be in the data body, only in headers
+        const { oauthAccessToken, ...expectedData } = transferData;
         expect(axios).toHaveBeenCalledWith({
           method: "POST",
           url: "https://api.100pay.co/api/v1/transfer/asset",
@@ -579,9 +582,9 @@ describe("Pay100", () => {
             "x-timestamp": "1234567890000",
             "x-signature": "mocked_signature",
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${config.token}`,
+            Authorization: `Bearer ${config.token}`,
           },
-          data: transferData,
+          data: expectedData,
           params: undefined,
         });
       });
