@@ -175,7 +175,6 @@ export class Pay100 {
         "x-timestamp": timestamp,
         "x-signature": signature,
         "Content-Type": "application/json",
-        ...(payload?.headers || {}),
       };
     }
 
@@ -183,7 +182,6 @@ export class Pay100 {
     return {
       "api-key": this.publicKey,
       "Content-Type": "application/json",
-      ...(payload?.headers || {}),
     };
   }
 
@@ -333,15 +331,12 @@ export class Pay100 {
     executeTransfer: async (
       data: ITransferAssetData
     ): Promise<ITransferAssetResponse> => {
+      const { oauthAccessToken, ...transferData } = data;
       return this.request<ITransferAssetResponse>(
         "POST",
         "/api/v1/transfer/asset",
-        data,
-        {
-          ...(data?.oauthAccessToken && {
-            Authorization: `Bearer ${data?.oauthAccessToken}`,
-          }),
-        }
+        transferData,
+        oauthAccessToken ? { Authorization: `Bearer ${oauthAccessToken}` } : {}
       );
     },
 
@@ -513,9 +508,8 @@ export class Pay100 {
       return this.request<IApiResponse<IUserInfo>>(
         "GET",
         "/api/v1/oauth/userinfo",
-        {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        }
+        {},
+        { Authorization: `Bearer ${accessToken}` }
       );
     },
 
@@ -530,9 +524,8 @@ export class Pay100 {
       return this.request<IApiResponse<IAppInfo>>(
         "GET",
         "/api/v1/oauth/appinfo",
-        {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        }
+        {},
+        { Authorization: `Bearer ${accessToken}` }
       );
     },
 
