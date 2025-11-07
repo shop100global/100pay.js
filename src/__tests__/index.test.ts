@@ -572,7 +572,8 @@ describe("Pay100", () => {
         expect(result).toEqual(mockResponse);
 
         // oauthAccessToken should NOT be in the data body, only in headers
-        const { ...expectedData } = transferData;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { oauthAccessToken, ...expectedData } = transferData;
         expect(axios).toHaveBeenCalledWith({
           method: "POST",
           url: "https://api.100pay.co/api/v1/transfer/asset",
