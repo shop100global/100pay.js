@@ -336,11 +336,11 @@ export class Pay100 {
       return this.request<ITransferAssetResponse>(
         "POST",
         "/api/v1/transfer/asset",
+        data,
         {
-          ...data,
-          headers: {
-            Authorization: `Bearer ${data.oauthAccessToken}`,
-          },
+          ...(data?.oauthAccessToken && {
+            Authorization: `Bearer ${data?.oauthAccessToken}`,
+          }),
         }
       );
     },
@@ -558,7 +558,8 @@ export class Pay100 {
   async request<T>(
     method: "GET" | "POST" | "PUT" | "DELETE",
     endpoint: string,
-    data: Record<string, unknown> = {}
+    data: Record<string, unknown> = {},
+    customHeaders: Record<string, string> = {}
   ): Promise<T> {
     try {
       const url = `${this.baseUrl}${endpoint}`;
@@ -567,7 +568,7 @@ export class Pay100 {
       const response = await axios({
         method,
         url,
-        headers,
+        headers: { ...headers, ...customHeaders },
         data: method !== "GET" ? data : undefined,
         params: method === "GET" ? data : undefined,
       });
