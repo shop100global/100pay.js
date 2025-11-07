@@ -183,6 +183,7 @@ export class Pay100 {
     return {
       "api-key": this.publicKey,
       "Content-Type": "application/json",
+      ...(payload?.headers || {}),
     };
   }
 
@@ -335,7 +336,12 @@ export class Pay100 {
       return this.request<ITransferAssetResponse>(
         "POST",
         "/api/v1/transfer/asset",
-        data
+        {
+          ...data,
+          headers: {
+            Authorization: `Bearer ${data.oauthAccessToken}`,
+          },
+        }
       );
     },
 

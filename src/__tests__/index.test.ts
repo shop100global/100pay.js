@@ -30,6 +30,7 @@ describe("Pay100", () => {
   const config = {
     publicKey: "test_public_key",
     secretKey: "test_secret_key",
+    token: "test_token",
   };
 
   let pay100: Pay100;
@@ -330,10 +331,7 @@ describe("Pay100", () => {
     let pay100: Pay100;
 
     beforeEach(() => {
-      pay100 = new Pay100({
-        publicKey: "test_public_key",
-        secretKey: "test_secret_key",
-      });
+      pay100 = new Pay100(config);
       jest.clearAllMocks();
 
       // Mock Date.now() to return a consistent timestamp for testing
@@ -431,10 +429,7 @@ describe("Pay100", () => {
     let pay100: Pay100;
 
     beforeEach(() => {
-      pay100 = new Pay100({
-        publicKey: "test_public_key",
-        secretKey: "test_secret_key",
-      });
+      pay100 = new Pay100(config);
       jest.clearAllMocks();
 
       // Mock Date.now() to return a consistent timestamp for testing
@@ -530,10 +525,7 @@ describe("Pay100", () => {
     let pay100: Pay100;
 
     beforeEach(() => {
-      pay100 = new Pay100({
-        publicKey: "test_public_key",
-        secretKey: "test_secret_key",
-      });
+      pay100 = new Pay100(config);
       jest.clearAllMocks();
 
       // Mock Date.now() to return a consistent timestamp for testing
@@ -573,6 +565,7 @@ describe("Pay100", () => {
           reference: "ref_12345",
           transactionPin: "123456",
           appId: "app123",
+          oauthAccessToken: config.token,
         };
 
         const result = await pay100.transfer.executeTransfer(transferData);
@@ -586,8 +579,14 @@ describe("Pay100", () => {
             "x-timestamp": "1234567890000",
             "x-signature": "mocked_signature",
             "Content-Type": "application/json",
+            "Authorization": `Bearer ${config.token}`,
           },
-          data: transferData,
+          data: {
+            ...transferData,
+            headers: {
+              Authorization: `Bearer ${config.token}`,
+            },
+          },
           params: undefined,
         });
       });
