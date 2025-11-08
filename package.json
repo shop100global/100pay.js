@@ -33,7 +33,11 @@
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "verify": "npm run lint && npm run build",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "release": "standard-version",
+    "release:minor": "standard-version --release-as minor",
+    "release:major": "standard-version --release-as major",
+    "release:patch": "standard-version --release-as patch"
   },
   "repository": {
     "type": "git",
@@ -62,6 +66,7 @@
     "eslint": "^9.23.0",
     "globals": "^16.0.0",
     "nodemon": "^3.1.10",
+    "standard-version": "^9.5.0",
     "tsup": "^8.4.0",
     "typescript": "^5.8.2"
   },

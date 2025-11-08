@@ -1,4 +1,4 @@
-import { Pay100 } from "./dist/index.js";
+import { Pay100 } from "../dist/index.js";
 
 // Initialize the SDK with the provided API key
 const pay100 = new Pay100({
